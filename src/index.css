@@ -1,0 +1,113 @@
+/* Bootstrap CSS */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Sidebar Layout Styles */
+.wrapper {
+  display: flex;
+  width: 100%;
+  align-items: stretch;
+  min-height: 100vh;
+}
+
+#sidebar {
+  min-width: 250px;
+  max-width: 250px;
+  min-height: 100vh;
+  transition: all 0.3s;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+#sidebar.collapsed {
+  margin-left: -250px;
+}
+
+#content {
+  width: 100%;
+  padding: 0;
+  min-height: 100vh;
+  transition: all 0.3s;
+  margin-left: 250px;
+}
+
+#content.sidebar-collapsed {
+  margin-left: 0;
+}
+
+@media (max-width: 768px) {
+  #sidebar {
+    margin-left: -250px;
+  }
+  #sidebar.collapsed {
+    margin-left: 0;
+  }
+  #content {
+    margin-left: 0;
+  }
+}
+
+#sidebar .components {
+  padding: 20px 0;
+}
+
+#sidebar .components li {
+  margin: 0;
+}
+
+#sidebar .components li a {
+  text-decoration: none;
+  display: block;
+  transition: all 0.3s;
+}
+
+#sidebar .components li a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+#sidebar .components li.active > a {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+#sidebar .components li a i {
+  width: 20px;
+  text-align: center;
+}
+
+.sidebar-header {
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#sidebarCollapse {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  #sidebarCollapse {
+    display: block;
+  }
+}
