@@ -5,6 +5,8 @@ import PublicRoute from './components/PublicRoute';
 import Login from './components/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import UserManagement from './components/UserManagement'
+import Layout from './components/Layout';
 import './App.css';
 
 function App() {
@@ -36,6 +38,13 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/users" element={
+            <ProtectedRoute>
+              <Layout>
+                <UserManagement />
+              </Layout>
+            </ProtectedRoute>
+          } />
           <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>

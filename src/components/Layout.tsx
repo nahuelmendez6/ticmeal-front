@@ -17,6 +17,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
+      // Colapsar en pantallas pequeñas
       if (window.innerWidth <= 768) {
         setSidebarCollapsed(true);
       }
@@ -36,13 +37,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return location.pathname === path;
   };
 
-  const isAdmin = userProfile?.groups?.includes('admin');
-  const isKitchen = userProfile?.groups?.includes('cocina');
+  // 🔑 CORRECCIÓN CLAVE: Verificar el rol usando la propiedad 'role'
+  // El rol viene como una cadena de texto (ej: "company_admin").
+  const isAdmin = userProfile?.role === 'company_admin';
+  const isKitchen = userProfile?.role === 'cocina'; // Asumiendo 'cocina' es el rol
+  const isEmployee = !!userProfile?.role; // Asumimos que si hay un rol, es un empleado base
+
+  // console.log('User Profile:', userProfile); // Puedes mantener este log para debug
+  // console.log(`isAdmin: ${isAdmin}, isKitchen: ${isKitchen}`); // Log de permisos
 
   const renderMenuItems = () => {
     const menuItems: React.ReactNode[] = [];
 
-    // Admin menu items (department.id = 1)
+    // Menú de Administrador
     if (isAdmin) {
       menuItems.push(
         <li key="users" className={isActive('/users') ? 'active' : ''}>
@@ -78,7 +85,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       );
     }
 
-    // Kitchen menu items (department.id = 3)
+    // Menú de Cocina
     if (isKitchen) {
       menuItems.push(
         <li key="ticket-list" className={isActive('/ticket-list') ? 'active' : ''}>
@@ -90,15 +97,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       );
     }
 
-    // Common menu items for all users
-    menuItems.push(
-      <li key="ticket-validation" className={isActive('/ticket-validation') ? 'active' : ''}>
-        <Link to="/ticket-validation" className="d-flex align-items-center p-3 text-white">
-          <i className="bi bi-upc-scan me-2"></i>
-          Validar Ticket
-        </Link>
-      </li>
-    );
+    // Funcionalidad Común (Generalmente disponible para cualquier usuario)
+    if (isEmployee) {
+        menuItems.push(
+          <li key="ticket-validation" className={isActive('/ticket-validation') ? 'active' : ''}>
+            <Link to="/ticket-validation" className="d-flex align-items-center p-3 text-white">
+              <i className="bi bi-upc-scan me-2"></i>
+              Validar Ticket
+            </Link>
+          </li>
+        );
+    }
 
     return menuItems;
   };
@@ -132,12 +141,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="ms-auto d-flex align-items-center">
               <span className="me-3 text-dark">
                 <i className="bi bi-person-circle me-2"></i>
-                {userProfile?.first_name && userProfile?.last_name
-                  ? `${userProfile.first_name} ${userProfile.last_name}`
-                  : userProfile?.username || 'Usuario'}
-                {userProfile?.department && (
+                {/* Asumimos que userProfile.username siempre está presente después del login */}
+                {userProfile?.username || 'Usuario'} 
+                {/* ℹ️ Muestra el rol si está presente, ya que el backend lo devuelve */}
+                {userProfile?.role && (
                   <small className="ms-2 text-muted">
-                    ({userProfile.department.name})
+                    ({userProfile.role})
                   </small>
                 )}
               </span>
@@ -164,4 +173,3 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 };
 
 export default Layout;
-

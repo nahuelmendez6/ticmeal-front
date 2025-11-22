@@ -19,13 +19,7 @@ interface RegisterData {
 interface User {
   username: string;
   email?: string;
-  first_name?: string;
-  last_name?: string;
-  groups?: string[];
-  department?: {
-    id: number;
-    name: string;
-  };
+  role?: string;
 }
 
 interface AuthContextType {
@@ -68,44 +62,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const loginWithCredentials = async (username: string, password: string): Promise<boolean> => {
-    try {
-      const response = await fetch('http://localhost:3000/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
+      try {
+        // 1. Petición al Backend
+        const response = await fetch('http://localhost:3000/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password }),
+        });
 
-      if (!response.ok) {
-        throw new Error('Login failed');
+        if (!response.ok) {
+          // Mejorar el manejo de errores para incluir el mensaje del backend si está disponible
+          const errorText = await response.text();
+          throw new Error(`Login failed: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        
+        // 2. Extracción Correcta de Datos del Payload 🔑
+        // La respuesta del backend tiene la forma: { access_token: "...", payload: { ...datos_usuario } }
+        const payload = data.payload || {};
+        
+        // Store user data
+        const userData: User = {
+          // Usar el username del payload, que es el que valida el backend
+          username: payload.username || username,
+          // Acceder a la propiedad 'role' dentro de 'payload'
+          role: payload.role, 
+          // El email no está en el payload actual, lo dejamos como undefined
+          email: payload.email, // O undefined si estás seguro de que el backend no lo devuelve
+        };
+
+        // 3. Actualización de Estados y Almacenamiento
+        setUser(userData);
+        setUserProfile(userData);
+        
+        // Store in localStorage
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('userProfile', JSON.stringify(userData));
+        
+        // Usar 'data.access_token' que es el nombre exacto de la propiedad en la respuesta
+        localStorage.setItem('token', data.access_token || ''); 
+
+        return true;
+      } catch (error) {
+        console.error('Login error:', error);
+        return false;
       }
-
-      const data = await response.json();
-      
-      // Store user data
-      const userData: User = {
-        username: data.username || username,
-        email: data.email,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        groups: data.groups,
-        department: data.department,
-      };
-
-      setUser(userData);
-      setUserProfile(userData);
-      
-      // Store in localStorage
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('userProfile', JSON.stringify(userData));
-      localStorage.setItem('token', data.token || data.access_token || '');
-
-      return true;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
-    }
   };
 
   const registerCompany = async (data: RegisterData): Promise<boolean> => {
