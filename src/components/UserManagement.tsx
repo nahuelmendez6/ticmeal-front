@@ -16,6 +16,8 @@ import {
   FishOff,
   Baby,
   CupSoda,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 interface User {
@@ -67,6 +69,8 @@ const UserManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('company_admin');
 
+  const [emailVerification, setEmailVerification] = useState('');
+  const [observationsOpen, setObservationsOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [observations, setObservations] = useState<Observation[]>([]);
   const [loadingObservations, setLoadingObservations] = useState(false);
@@ -156,6 +160,12 @@ const UserManagement: React.FC = () => {
     setSubmitting(true);
     setError(null);
 
+    if (newUser.email !== emailVerification) {
+      setError('Los correos electrónicos no coinciden.');
+      setSubmitting(false);
+      return;
+    }
+
     const endpoint = newUser.role === 'diner'
       ? 'http://localhost:3000/auth/register-diner'
       : 'http://localhost:3000/auth/register-kitchen-admin';
@@ -242,6 +252,13 @@ const UserManagement: React.FC = () => {
     );
   };
 
+  const uniqueObservations = observations.filter((obs, index, self) =>
+    index === self.findIndex((o) => (
+        o.id === obs.id
+    ))
+  );
+
+
   if (loading) {
     return <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}><div className="spinner-border" role="status"><span className="visually-hidden">Cargando...</span></div></div>;
   }
@@ -286,7 +303,7 @@ const UserManagement: React.FC = () => {
 
       {/* Add User Modal */}
       <div className={`modal fade ${showModal ? 'show d-block' : ''}`} tabIndex={-1} style={{ backgroundColor: showModal ? 'rgba(0,0,0,0.5)' : 'transparent' }}>
-        <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-dialog modal-lg modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">Añadir Nuevo Usuario</h5>
@@ -295,46 +312,65 @@ const UserManagement: React.FC = () => {
             <form onSubmit={handleAddUser}>
               <div className="modal-body">
                 {error && <div className="alert alert-danger">{error}</div>}
-                <div className="mb-3">
-                  <label htmlFor="firstName" className="form-label">Nombre</label>
-                  <input type="text" className="form-control" id="firstName" name="firstName" value={newUser.firstName} onChange={handleInputChange} required />
+                <div className="row g-2">
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="firstName" className="form-label">Nombre</label>
+                    <input type="text" className="form-control form-control-sm" id="firstName" name="firstName" value={newUser.firstName} onChange={handleInputChange} required />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="lastName" className="form-label">Apellido</label>
+                    <input type="text" className="form-control form-control-sm" id="lastName" name="lastName" value={newUser.lastName} onChange={handleInputChange} required />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="email" className="form-label">Email</label>
+                    <input type="email" className="form-control form-control-sm" id="email" name="email" value={newUser.email} onChange={handleInputChange} required />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="emailVerification" className="form-label">Verificar Email</label>
+                    <input 
+                      type="email" 
+                      className={`form-control form-control-sm ${newUser.email !== emailVerification && emailVerification ? 'is-invalid' : ''}`} 
+                      id="emailVerification" 
+                      name="emailVerification" 
+                      value={emailVerification} 
+                      onChange={(e) => setEmailVerification(e.target.value)} required />
+                  </div>
+                  <div className="col-12 mb-3">
+                    <label htmlFor="role" className="form-label">Rol</label>
+                    <select className="form-select form-select-sm" id="role" name="role" value={newUser.role} onChange={handleInputChange}>
+                      <option value="diner">Comensal</option>
+                      <option value="kitchen_admin">Administrador de Cocina</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="mb-3">
-                  <label htmlFor="lastName" className="form-label">Apellido</label>
-                  <input type="text" className="form-control" id="lastName" name="lastName" value={newUser.lastName} onChange={handleInputChange} required />
-                </div>
-                <div className="mb-3">
-                  <label htmlFor="email" className="form-label">Email</label>
-                  <input type="email" className="form-control" id="email" name="email" value={newUser.email} onChange={handleInputChange} required />
-                </div>
-                <div className="mb-3">
-                  <label htmlFor="role" className="form-label">Rol</label>
-                  <select className="form-select" id="role" name="role" value={newUser.role} onChange={handleInputChange}>
-                    <option value="diner">Comensal</option>
-                    <option value="kitchen_admin">Administrador de Cocina</option>
-                  </select>
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Observaciones (Opcional)</label>
-                  {loadingObservations ? (
-                    <div className="text-center"><div className="spinner-border spinner-border-sm" role="status"><span className="visually-hidden">Cargando...</span></div></div>
-                  ) : (
-                    <div className="row">
-                      {observations.map(obs => (
-                        <div className="col-md-6" key={obs.id}>
-                          <div className="form-check">
-                            <input 
-                              className="form-check-input" 
-                              type="checkbox" 
-                              value={obs.id} 
-                              id={`obs-${obs.id}`} 
-                              onChange={() => handleObservationChange(obs.id)} />
-                            <label className="form-check-label d-flex align-items-center" htmlFor={`obs-${obs.id}`}><ObservationIcon iconName={obs.iconName} />{obs.name}</label>
+                  <button className="btn btn-outline-secondary w-100 d-flex justify-content-between align-items-center" type="button" onClick={() => setObservationsOpen(!observationsOpen)}>
+                    Observaciones (Opcional)
+                    {observationsOpen ? <ChevronUp /> : <ChevronDown />}
+                  </button>
+                  <div className={`collapse ${observationsOpen ? 'show' : ''}`}>
+                    <div className="card card-body">
+                      {loadingObservations ? (
+                        <div className="text-center"><div className="spinner-border spinner-border-sm" role="status"><span className="visually-hidden">Cargando...</span></div></div>
+                      ) : (
+                        <div className="row" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                          {uniqueObservations.map(obs => (
+                            <div className="col-md-6" key={obs.id}>
+                              <div className="form-check">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  value={obs.id}
+                                  id={`obs-${obs.id}`}
+                                  onChange={() => handleObservationChange(obs.id)} />
+                                <label className="form-check-label d-flex align-items-center" htmlFor={`obs-${obs.id}`}><ObservationIcon iconName={obs.iconName} />{obs.name}</label>
+                              </div>
+                            </div>
+                          ))}
                           </div>
-                        </div>
-                      ))}
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
               <div className="modal-footer">
