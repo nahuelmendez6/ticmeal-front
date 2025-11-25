@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   PlusCircle,
   UserCog,
@@ -12,7 +12,6 @@ import {
   MilkOff,
   AlertTriangle,
   HeartPulse,
-  Gauge,
   FishOff,
   Baby,
   CupSoda,
@@ -20,6 +19,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 
+// Interfaces
 interface User {
   id: number;
   firstName: string;
@@ -28,31 +28,13 @@ interface User {
   role: 'company_admin' | 'kitchen_admin' | 'diner' | string;
   isActive: boolean;
   createdAt: string;
-  observationIds: [];
+  observations: Observation[];
 }
 
 interface Observation {
   id: number;
   name: string;
   iconName: string;
-}
-
-const iconMap: { [key: string]: React.ElementType } = {
-  'WheatOff': WheatOff,
-  'Leaf': Leaf,
-  'Vegan': Vegan,
-  'MilkOff': MilkOff,
-  'AlertTriangle': AlertTriangle,
-  'HeartPulse': HeartPulse,
-  'Gauge': Gauge,
-  'FishOff': FishOff,
-  'Baby': Baby,
-  'Blender': CupSoda, // Corregido: 'Blender' no existe, se usa 'CupSoda' en su lugar
-};
-
-const ObservationIcon: React.FC<{ iconName: string }> = ({ iconName }) => {
-  const Icon = iconMap[iconName] || AlertTriangle; // Icono por defecto si no se encuentra
-  return <Icon className="me-2" size={18} />;
 }
 
 interface NewUser {
@@ -63,18 +45,39 @@ interface NewUser {
   observationIds: number[];
 }
 
+// Icon Mapping
+const iconMap: { [key: string]: React.ElementType } = {
+  'WheatOff': WheatOff,
+  'Leaf': Leaf,
+  'Vegan': Vegan,
+  'MilkOff': MilkOff,
+  'AlertTriangle': AlertTriangle,
+  'HeartPulse': HeartPulse,
+  'FishOff': FishOff,
+  'Baby': Baby,
+  'Blender': CupSoda,
+};
+
+// ObservationIcon Component
+const ObservationIcon: React.FC<{ iconName: string }> = ({ iconName }) => {
+  const Icon = iconMap[iconName] || AlertTriangle;
+  return <Icon className="me-2" size={18} />;
+};
+
+// UserManagement Component
 const UserManagement: React.FC = () => {
+  // State variables
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('company_admin');
-
-  const [emailVerification, setEmailVerification] = useState('');
-  const [observationsOpen, setObservationsOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [observations, setObservations] = useState<Observation[]>([]);
   const [loadingObservations, setLoadingObservations] = useState(false);
-
+  const [emailVerification, setEmailVerification] = useState('');
+  const [observationsOpen, setObservationsOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [newUser, setNewUser] = useState<NewUser>({
     firstName: '',
     lastName: '',
@@ -82,38 +85,35 @@ const UserManagement: React.FC = () => {
     role: 'diner',
     observationIds: [],
   });
-  const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No autenticado');
-        }
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No autenticado');
 
-        const response = await fetch('http://localhost:3000/users', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+      const response = await fetch('http://localhost:3000/users', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ message: 'Error al obtener los usuarios' }));
-          throw new Error(errorData.message || 'Error al obtener los usuarios');
-        }
-
-        const data: User[] = await response.json();
-        setUsers(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Ocurrió un error desconocido');
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Error al obtener los usuarios' }));
+        throw new Error(errorData.message || 'Error al obtener los usuarios');
       }
-    };
 
-    fetchUsers();
+      const data: User[] = await response.json();
+      setUsers(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ocurrió un error desconocido');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  // Data fetching hooks
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   useEffect(() => {
     const fetchObservations = async () => {
@@ -121,17 +121,14 @@ const UserManagement: React.FC = () => {
         setLoadingObservations(true);
         try {
           const token = localStorage.getItem('token');
-          if (!token) {
-            throw new Error('No autenticado');
-          }
+          if (!token) throw new Error('No autenticado');
+
           const response = await fetch('http://localhost:3000/observations', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
+            headers: { 'Authorization': `Bearer ${token}` },
           });
-          if (!response.ok) {
-            throw new Error('Error al obtener las observaciones');
-          }
+
+          if (!response.ok) throw new Error('Error al obtener las observaciones');
+          
           const data: Observation[] = await response.json();
           setObservations(data);
         } catch (err) {
@@ -141,9 +138,37 @@ const UserManagement: React.FC = () => {
         }
       }
     };
-
     fetchObservations();
   }, [showModal]);
+
+  // Modal and Form handlers
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingUser(null);
+    setNewUser({
+      firstName: '',
+      lastName: '',
+      email: '',
+      role: 'diner',
+      observationIds: [],
+    });
+    setEmailVerification('');
+    setObservationsOpen(false);
+    setError(null);
+  };
+
+  const handleEditClick = (user: User) => {
+    setEditingUser(user);
+    setNewUser({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      email: user.email,
+      role: user.role as 'diner' | 'kitchen_admin',
+      observationIds: user.observations ? user.observations.map(obs => obs.id) : [],
+    });
+    setEmailVerification(user.email);
+    setShowModal(true);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -151,65 +176,87 @@ const UserManagement: React.FC = () => {
   };
 
   const handleObservationChange = (observationId: number) => {
-    const newObservationIds = newUser.observationIds.includes(observationId) ? newUser.observationIds.filter(id => id !== observationId) : [...newUser.observationIds, observationId];
-    setNewUser(prev => ({ ...prev, observationIds: newObservationIds }));
+    setNewUser(prev => ({
+      ...prev,
+      observationIds: prev.observationIds.includes(observationId)
+        ? prev.observationIds.filter(id => id !== observationId)
+        : [...prev.observationIds, observationId],
+    }));
   };
 
-  const handleAddUser = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-
     if (newUser.email !== emailVerification) {
       setError('Los correos electrónicos no coinciden.');
-      setSubmitting(false);
       return;
     }
 
-    const endpoint = newUser.role === 'diner'
-      ? 'http://localhost:3000/auth/register-diner'
-      : 'http://localhost:3000/auth/register-kitchen-admin';
+    setSubmitting(true);
+    setError(null);
+
+    const isEditing = editingUser !== null;
+    const endpoint = isEditing
+      ? `http://localhost:3000/users/${editingUser.id}`
+      : (newUser.role === 'diner'
+        ? 'http://localhost:3000/auth/register-diner'
+        : 'http://localhost:3000/auth/register-kitchen-admin');
+    
+    const method = isEditing ? 'PATCH' : 'POST';
+
+    let payload: any = {};
+    if (isEditing) {
+      if (newUser.firstName !== editingUser.firstName) payload.firstName = newUser.firstName;
+      if (newUser.lastName !== editingUser.lastName) payload.lastName = newUser.lastName;
+      if (newUser.email !== editingUser.email) payload.email = newUser.email;
+      
+      const oldObservationIds = new Set(editingUser.observations.map(o => o.id));
+      const newObservationIds = new Set(newUser.observationIds);
+      if (oldObservationIds.size !== newObservationIds.size || ![...oldObservationIds].every(id => newObservationIds.has(id))) {
+        payload.observationsIds = newUser.observationIds;
+      }
+    } else {
+      payload = { ...newUser, observationsIds: newUser.observationIds };
+    }
 
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          email: newUser.email,
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-          role: newUser.role,
-          observationsIds: newUser.observationIds,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al registrar el usuario');
+        const errorData = await response.json().catch(() => ({ message: `Error al ${isEditing ? 'actualizar' : 'registrar'} el usuario` }));
+        throw new Error(errorData.message);
       }
 
-      // Re-fetch users to update the list
-      // For simplicity, we'll just reload the page. A better approach would be to refetch.
-      window.location.reload();
-
+      handleCloseModal();
+      await fetchUsers(); // Re-fetch users to update the list
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocurrió un error desconocido');
     } finally {
       setSubmitting(false);
-      setShowModal(false);
     }
   };
 
+  // Render functions
   const renderUsersTable = (role: string) => {
     const filteredUsers = users.filter(user => user.role === role);
 
     return (
-        <div className="card">
-          <div className="card-body">
+      <div className="card">
+        <div className="card-body">
+          {loading ? (
+            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+              <div className="spinner-border" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+            </div>
+          ) : (
             <div className="table-responsive">
               <table className="table table-hover align-middle">
                 <thead className="table-light">
@@ -233,64 +280,58 @@ const UserManagement: React.FC = () => {
                       </td>
                       <td>{new Date(user.createdAt).toLocaleDateString()}</td>
                       <td>
-                        <>
-                            <button className="btn btn-sm btn-outline-primary me-2" title="Editar" style={{ border: 'none' }}>
-                                <FilePenLine size={18} />
-                            </button>
-                            <button className="btn btn-sm btn-outline-danger" title="Eliminar" style={{ border: 'none' }}>
-                                <Trash2 size={18} />
-                            </button>
-                        </>
+                        <button className="btn btn-sm btn-outline-primary me-2" title="Editar" style={{ border: 'none' }} onClick={() => handleEditClick(user)}>
+                          <FilePenLine size={18} />
+                        </button>
+                        <button className="btn btn-sm btn-outline-danger" title="Eliminar" style={{ border: 'none' }}>
+                          <Trash2 size={18} />
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
+          )}
         </div>
+      </div>
     );
   };
 
+  // Early return for initial loading error
+  if (error && users.length === 0) {
+    return <div className="alert alert-danger mt-4">Error: {error}</div>
+  }
+
+  // Filter unique observations for the modal
   const uniqueObservations = observations.filter((obs, index, self) =>
-    index === self.findIndex((o) => (
-        o.id === obs.id
-    ))
+    index === self.findIndex((o) => o.id === obs.id)
   );
-
-
-  if (loading) {
-    return <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}><div className="spinner-border" role="status"><span className="visually-hidden">Cargando...</span></div></div>;
-  }
-
-  if (error) {
-    return <div className="alert alert-danger">Error: {error}</div>;
-  }
 
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>Gestión de Usuarios</h1>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-            <PlusCircle className="me-2" size={20}/>
-            Añadir Usuario
+          <PlusCircle className="me-2" size={20} />
+          Añadir Usuario
         </button>
       </div>
 
       <ul className="nav nav-tabs mb-3">
         <li className="nav-item">
           <button className={`nav-link d-flex align-items-center ${activeTab === 'company_admin' ? 'active' : ''}`} onClick={() => setActiveTab('company_admin')}>
-            <UserCog className="me-2" size={18}/>Administradores de Empresa
+            <UserCog className="me-2" size={18} />Administradores de Empresa
           </button>
         </li>
         <li className="nav-item">
           <button className={`nav-link d-flex align-items-center ${activeTab === 'kitchen_admin' ? 'active' : ''}`} onClick={() => setActiveTab('kitchen_admin')}>
-            <ChefHat className="me-2" size={18}/>Administradores de Cocina
+            <ChefHat className="me-2" size={18} />Administradores de Cocina
           </button>
         </li>
         <li className="nav-item">
           <button className={`nav-link d-flex align-items-center ${activeTab === 'diner' ? 'active' : ''}`} onClick={() => setActiveTab('diner')}>
-            <Users className="me-2" size={18}/>Comensales
+            <Users className="me-2" size={18} />Comensales
           </button>
         </li>
       </ul>
@@ -301,94 +342,106 @@ const UserManagement: React.FC = () => {
         {activeTab === 'diner' && renderUsersTable('diner')}
       </div>
 
-      {/* Add User Modal */}
-      <div className={`modal fade ${showModal ? 'show d-block' : ''}`} tabIndex={-1} style={{ backgroundColor: showModal ? 'rgba(0,0,0,0.5)' : 'transparent' }}>
-        <div className="modal-dialog modal-lg modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Añadir Nuevo Usuario</h5>
-              <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-            </div>
-            <form onSubmit={handleAddUser}>
-              <div className="modal-body">
-                {error && <div className="alert alert-danger">{error}</div>}
-                <div className="row g-2">
-                  <div className="col-md-6 mb-3">
-                    <label htmlFor="firstName" className="form-label">Nombre</label>
-                    <input type="text" className="form-control form-control-sm" id="firstName" name="firstName" value={newUser.firstName} onChange={handleInputChange} required />
-                  </div>
-                  <div className="col-md-6 mb-3">
-                    <label htmlFor="lastName" className="form-label">Apellido</label>
-                    <input type="text" className="form-control form-control-sm" id="lastName" name="lastName" value={newUser.lastName} onChange={handleInputChange} required />
-                  </div>
-                  <div className="col-md-6 mb-3">
-                    <label htmlFor="email" className="form-label">Email</label>
-                    <input type="email" className="form-control form-control-sm" id="email" name="email" value={newUser.email} onChange={handleInputChange} required />
-                  </div>
-                  <div className="col-md-6 mb-3">
-                    <label htmlFor="emailVerification" className="form-label">Verificar Email</label>
-                    <input 
-                      type="email" 
-                      className={`form-control form-control-sm ${newUser.email !== emailVerification && emailVerification ? 'is-invalid' : ''}`} 
-                      id="emailVerification" 
-                      name="emailVerification" 
-                      value={emailVerification} 
-                      onChange={(e) => setEmailVerification(e.target.value)} required />
-                  </div>
-                  <div className="col-12 mb-3">
-                    <label htmlFor="role" className="form-label">Rol</label>
-                    <select className="form-select form-select-sm" id="role" name="role" value={newUser.role} onChange={handleInputChange}>
-                      <option value="diner">Comensal</option>
-                      <option value="kitchen_admin">Administrador de Cocina</option>
-                    </select>
-                  </div>
+      {/* Add/Edit User Modal */}
+      {showModal && (
+        <>
+          <div className="modal fade show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog modal-lg modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">{editingUser ? 'Editar Usuario' : 'Añadir Nuevo Usuario'}</h5>
+                  <button type="button" className="btn-close" onClick={handleCloseModal}></button>
                 </div>
-                <div className="mb-3">
-                  <button className="btn btn-outline-secondary w-100 d-flex justify-content-between align-items-center" type="button" onClick={() => setObservationsOpen(!observationsOpen)}>
-                    Observaciones (Opcional)
-                    {observationsOpen ? <ChevronUp /> : <ChevronDown />}
-                  </button>
-                  <div className={`collapse ${observationsOpen ? 'show' : ''}`}>
-                    <div className="card card-body">
-                      {loadingObservations ? (
-                        <div className="text-center"><div className="spinner-border spinner-border-sm" role="status"><span className="visually-hidden">Cargando...</span></div></div>
-                      ) : (
-                        <div className="row" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                          {uniqueObservations.map(obs => (
-                            <div className="col-md-6" key={obs.id}>
-                              <div className="form-check">
-                                <input
-                                  className="form-check-input"
-                                  type="checkbox"
-                                  value={obs.id}
-                                  id={`obs-${obs.id}`}
-                                  onChange={() => handleObservationChange(obs.id)} />
-                                <label className="form-check-label d-flex align-items-center" htmlFor={`obs-${obs.id}`}><ObservationIcon iconName={obs.iconName} />{obs.name}</label>
-                              </div>
+                <form onSubmit={handleFormSubmit}>
+                  <div className="modal-body">
+                    {error && !submitting && <div className="alert alert-danger">{error}</div>}
+                    <div className="row g-2">
+                      <div className="col-md-6 mb-3">
+                        <label htmlFor="firstName" className="form-label">Nombre</label>
+                        <input type="text" className="form-control form-control-sm" id="firstName" name="firstName" value={newUser.firstName} onChange={handleInputChange} required />
+                      </div>
+                      <div className="col-md-6 mb-3">
+                        <label htmlFor="lastName" className="form-label">Apellido</label>
+                        <input type="text" className="form-control form-control-sm" id="lastName" name="lastName" value={newUser.lastName} onChange={handleInputChange} required />
+                      </div>
+                      <div className="col-md-6 mb-3">
+                        <label htmlFor="email" className="form-label">Email</label>
+                        <input type="email" className="form-control form-control-sm" id="email" name="email" value={newUser.email} onChange={handleInputChange} required />
+                      </div>
+                      <div className="col-md-6 mb-3">
+                        <label htmlFor="emailVerification" className="form-label">Verificar Email</label>
+                        <input
+                          type="email"
+                          className={`form-control form-control-sm ${newUser.email !== emailVerification && emailVerification ? 'is-invalid' : ''}`}
+                          id="emailVerification"
+                          name="emailVerification"
+                          value={emailVerification}
+                          onChange={(e) => setEmailVerification(e.target.value)}
+                          required={!!newUser.email}
+                        />
+                      </div>
+                      <div className="col-12 mb-3">
+                        <label htmlFor="role" className="form-label">Rol</label>
+                        <select className="form-select form-select-sm" id="role" name="role" value={newUser.role} onChange={handleInputChange} disabled={!!editingUser}>
+                          <option value="diner">Comensal</option>
+                          <option value="kitchen_admin">Administrador de Cocina</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="mb-3">
+                      <button className="btn btn-outline-secondary w-100 d-flex justify-content-between align-items-center" type="button" onClick={() => setObservationsOpen(!observationsOpen)}>
+                        Observaciones (Opcional)
+                        {observationsOpen ? <ChevronUp /> : <ChevronDown />}
+                      </button>
+                      <div className={`collapse ${observationsOpen ? 'show' : ''}`}>
+                        <div className="card card-body">
+                          {loadingObservations ? (
+                            <div className="text-center">
+                              <div className="spinner-border spinner-border-sm" role="status"><span className="visually-hidden">Cargando...</span></div>
                             </div>
-                          ))}
-                          </div>
-                      )}
+                          ) : (
+                            <div className="row" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                              {uniqueObservations.map(obs => (
+                                <div className="col-md-6" key={obs.id}>
+                                  <div className="form-check">
+                                    <input
+                                      className="form-check-input"
+                                      type="checkbox"
+                                      value={obs.id}
+                                      id={`obs-${obs.id}`}
+                                      checked={newUser.observationIds.includes(obs.id)}
+                                      onChange={() => handleObservationChange(obs.id)}
+                                    />
+                                    <label className="form-check-label d-flex align-items-center" htmlFor={`obs-${obs.id}`}>
+                                      <ObservationIcon iconName={obs.iconName} />{obs.name}
+                                    </label>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>Cancelar</button>
+                    <button type="submit" className="btn btn-primary" disabled={submitting}>
+                      {submitting ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          {editingUser ? 'Guardando...' : 'Registrando...'}
+                        </>
+                      ) : (editingUser ? 'Guardar Cambios' : 'Registrar Usuario')}
+                    </button>
+                  </div>
+                </form>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary" disabled={submitting}>
-                  {submitting ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      Registrando...
-                    </>
-                  ) : 'Registrar Usuario'}
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
-        </div>
-      </div>
-      {showModal && <div className="modal-backdrop fade show"></div>}
+          <div className="modal-backdrop fade show"></div>
+        </>
+      )}
     </div>
   );
 };
