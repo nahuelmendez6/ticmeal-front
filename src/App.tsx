@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import UserManagement from './components/UserManagement'
 import Layout from './components/Layout';
+import MenuManagementPage from './pages/MenuManagementPage';
 import './App.css';
 
 function App() {
@@ -35,6 +36,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/menu-management"
+            element={
+              <ProtectedRoute>
+                <Layout>  
+                  <MenuManagementPage />
+                </Layout>
               </ProtectedRoute>
             }
           />

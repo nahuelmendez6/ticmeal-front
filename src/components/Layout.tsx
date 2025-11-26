@@ -70,8 +70,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             Tabla de Tickets
           </Link>
         </li>,
-        <li key="menu" className={isActive('/menu') ? 'active' : ''}>
-          <Link to="/menu" className="d-flex align-items-center p-3 text-white">
+        <li key="menu" className={isActive('/menu-management') ? 'active' : ''}>
+          <Link to="/menu-management" className="d-flex align-items-center p-3 text-white">
             <i className="bi bi-journal-text me-2"></i>
             Menú
           </Link>
