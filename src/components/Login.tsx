@@ -6,9 +6,9 @@ import logo from '../assets/logo.png'; // Placeholder, replace with actual logo
 
 interface LoginProps {
   showRegisterLink?: boolean;
-}
+} 
 
-const Login: React.FC<LoginProps> = ({ showRegisterLink = true }) => {
+const Login: React.FC<LoginProps> = ({ showRegisterLink = false }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

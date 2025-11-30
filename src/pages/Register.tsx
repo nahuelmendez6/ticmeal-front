@@ -39,12 +39,12 @@ const Register: React.FC = () => {
         },
       };
 
-      const success = await registerCompany(registerData);
-      if (success) {
+      const result = await registerCompany(registerData);
+      if (result && result.admin && result.admin.email) {
         setSuccess(true);
         setTimeout(() => {
-          navigate('/dashboard');
-        }, 1500);
+          navigate('/verify', { state: { email: result.admin.email } });
+        }, 2000);
       } else {
         setError('Error al registrar la empresa');
       }

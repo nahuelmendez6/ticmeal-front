@@ -16,6 +16,11 @@ interface RegisterData {
   admin: Admin;
 }
 
+interface RegisterResult {
+  company: any;
+  admin: { email: string; [key: string]: any };
+}
+
 interface User {
   username: string;
   email?: string;
@@ -26,7 +31,7 @@ interface AuthContextType {
   user: User | null;
   userProfile: User | null;
   loginWithCredentials: (username: string, password: string) => Promise<boolean>;
-  registerCompany: (data: RegisterData) => Promise<boolean>;
+  registerCompany: (data: RegisterData) => Promise<RegisterResult | null>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -112,7 +117,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
   };
 
-  const registerCompany = async (data: RegisterData): Promise<boolean> => {
+  const registerCompany = async (data: RegisterData): Promise<RegisterResult | null> => {
     try {
       const response = await fetch('http://localhost:3000/auth/register-company', {
         method: 'POST',
@@ -123,20 +128,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Registration failed');
+        const errorData = await response.json();
+        console.error('Registration failed:', errorData.message || 'Unknown error');
+        throw new Error(errorData.message || 'Registration failed');
       }
 
-      const result = await response.json();
-      
-      // After successful registration, automatically log in
-      if (result.admin?.email) {
-        return await loginWithCredentials(result.admin.email, data.admin.password);
-      }
-
-      return true;
+      return await response.json();
     } catch (error) {
       console.error('Registration error:', error);
-      return false;
+      return null;
     }
   };
 
@@ -159,4 +159,3 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-

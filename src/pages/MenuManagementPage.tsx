@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ItemManagement from './ItemManagement';
-import IngredientManagement from './IngredientManagement';
+import ItemIngredientManager from './ItemIngredientManager';
 
 const MenuManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('items');
@@ -12,7 +12,7 @@ const MenuManagementPage: React.FC = () => {
       case 'shifts':
         return <div className="p-4">Contenido de Asignar Ítems a Turnos</div>;
       case 'ingredients':
-        return <IngredientManagement />;
+        return <ItemIngredientManager />;
       default:
         return <ItemManagement />;
     }
@@ -22,20 +22,20 @@ const MenuManagementPage: React.FC = () => {
     <div>
       <h1 className="mb-4">Gestión de Menú</h1>
 
-      <ul className="nav nav-tabs mb-3">
+      <ul className="nav nav-underline mb-3">
         <li className="nav-item">
           <button className={`nav-link ${activeTab === 'items' ? 'active' : ''}`} onClick={() => setActiveTab('items')}>
-            Gestión de Items
+            Menú
+          </button>
+        </li>
+        <li className="nav-item">
+          <button className={`nav-link ${activeTab === 'ingredients' ? 'active' : ''}`} onClick={() => setActiveTab('ingredients')}>
+            Ingredientes
           </button>
         </li>
         <li className="nav-item">
           <button className={`nav-link ${activeTab === 'shifts' ? 'active' : ''}`} onClick={() => setActiveTab('shifts')}>
             Asignar Items a Turnos
-          </button>
-        </li>
-        <li className="nav-item">
-          <button className={`nav-link ${activeTab === 'ingredients' ? 'active' : ''}`} onClick={() => setActiveTab('ingredients')}>
-            Gestión de Ingredientes
           </button>
         </li>
       </ul>
