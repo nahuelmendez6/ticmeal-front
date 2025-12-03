@@ -54,6 +54,7 @@ interface MenuItem {
   name:string;
   category: { id: number; name: string } | null;
   iconName: string | null;
+  isActive: boolean;
 }
 
 interface Shift {
@@ -111,7 +112,7 @@ const ShiftDashboard: React.FC<ShiftDashboardProps> = ({
 
   return (
     <>
-      <ul className="nav nav-tabs mb-3">
+      <ul className="nav nav-underline mb-3">
         {shifts.map(shift => (
           <li className="nav-item" key={shift.id}>
             <button className={`nav-link ${activeShiftId === shift.id ? 'active' : ''}`} onClick={() => setActiveShiftId(shift.id)}>
@@ -124,16 +125,22 @@ const ShiftDashboard: React.FC<ShiftDashboardProps> = ({
       <div className="row">
         <div className="col-md-6">
           <h5>Ítems Disponibles</h5>
-          {Object.entries(groupedMenuItems).map(([category, items]) => (
-            <div key={category} className="mb-3">
-              <h6>{category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h6>
-              <div className="list-group">
-                {items.map(item => (
-                  <DraggableMenuItem key={item.id} item={item} />
-                ))}
+          {Object.keys(groupedMenuItems).length > 0 ? (
+            Object.entries(groupedMenuItems).map(([category, items]) => (
+              <div key={category} className="mb-3">
+                <h6>{category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h6>
+                <div className="list-group">
+                  {items.map(item => (
+                    <DraggableMenuItem key={item.id} item={item} />
+                  ))}
+                </div>
               </div>
+            ))
+          ) : (
+            <div className="text-center text-muted p-5 card bg-light">
+              No hay más ítems para asignar a este turno.
             </div>
-          ))}
+          )}
         </div>
 
         <div className="col-md-6">
@@ -202,7 +209,7 @@ const ShiftMenuAssignment: React.FC = () => {
     });
     if (!response.ok) throw new Error('Error al cargar los ítems del menú');
     const data: MenuItem[] = await response.json();
-    setMenuItems(data);
+    setMenuItems(data.filter(item => item.isActive));
   }, []);
 
   useEffect(() => {

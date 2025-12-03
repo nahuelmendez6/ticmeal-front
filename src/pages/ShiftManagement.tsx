@@ -175,24 +175,27 @@ const ShiftManagement: React.FC = () => {
       <div className="card-body border-bottom">
         <form onSubmit={handleSubmit}>
           {error && <div className="alert alert-danger">{error}</div>}
-          <div className="row g-3">
-            <div className="col-md-12">
+          <div className="row g-3 align-items-end">
+            <div className="col-md-4">
               <label htmlFor="name" className="form-label">Nombre del Turno</label>
-              <input type="text" id="name" name="name" className="form-control" value={formData.name} onChange={handleInputChange} required />
+              <input type="text" id="name" name="name" className="form-control form-control-sm" value={formData.name} onChange={handleInputChange} required />
             </div>
-            <div className="col-md-6">
+            <div className="col-md-2">
               <label htmlFor="startTime" className="form-label">Hora de Inicio</label>
-              <input type="time" id="startTime" name="startTime" className="form-control" value={formData.startTime} onChange={handleInputChange} required />
+              <input type="time" id="startTime" name="startTime" className="form-control form-control-sm" value={formData.startTime} onChange={handleInputChange} required />
             </div>
-            <div className="col-md-6">
+            <div className="col-md-2">
               <label htmlFor="endTime" className="form-label">Hora de Fin</label>
-              <input type="time" id="endTime" name="endTime" className="form-control" value={formData.endTime} onChange={handleInputChange} required />
+              <input type="time" id="endTime" name="endTime" className="form-control form-control-sm" value={formData.endTime} onChange={handleInputChange} required />
             </div>
-            <div className="col-12">
+            <div className="col-md-2">
               <div className="form-check form-switch">
                 <input className="form-check-input" type="checkbox" role="switch" id="menuActive" name="menuActive" checked={formData.menuActive} onChange={handleInputChange} />
-                <label className="form-check-label" htmlFor="menuActive">Menú Activo para este Turno</label>
+                <label className="form-check-label" htmlFor="menuActive">Menú Activo</label>
               </div>
+            </div>
+            <div className="col-md-2 d-flex justify-content-end">
+              {/* Este espacio se puede usar para el botón si se mueve aquí */}
             </div>
           </div>
           <div className="d-flex justify-content-end mt-4">

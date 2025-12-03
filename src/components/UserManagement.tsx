@@ -269,26 +269,32 @@ const UserManagement: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map(user => (
-                    <tr key={user.id}>
-                      <td>{user.firstName} {user.lastName}</td>
-                      <td>{user.email}</td>
-                      <td>
-                        <span className={`badge ${user.isActive ? 'bg-success' : 'bg-danger'}`}>
-                          {user.isActive ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </td>
-                      <td>{new Date(user.createdAt).toLocaleDateString()}</td>
-                      <td>
-                        <button className="btn btn-sm btn-outline-primary me-2" title="Editar" style={{ border: 'none' }} onClick={() => handleEditClick(user)}>
-                          <FilePenLine size={18} />
-                        </button>
-                        <button className="btn btn-sm btn-outline-danger" title="Eliminar" style={{ border: 'none' }}>
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
+                  {filteredUsers.length > 0 ? (
+                    filteredUsers.map(user => (
+                      <tr key={user.id}>
+                        <td>{user.firstName} {user.lastName}</td>
+                        <td>{user.email}</td>
+                        <td>
+                          <span className={`badge ${user.isActive ? 'bg-success' : 'bg-danger'}`}>
+                            {user.isActive ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </td>
+                        <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                        <td>
+                          <button className="btn btn-sm btn-outline-primary me-2" title="Editar" style={{ border: 'none' }} onClick={() => handleEditClick(user)}>
+                            <FilePenLine size={18} />
+                          </button>
+                          <button className="btn btn-sm btn-outline-danger" title="Eliminar" style={{ border: 'none' }}>
+                            <Trash2 size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="text-center text-muted p-4">No hay usuarios para mostrar en esta categoría.</td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -308,6 +314,12 @@ const UserManagement: React.FC = () => {
     index === self.findIndex((o) => o.id === obs.id)
   );
 
+  // Calculate user counts per role
+  const companyAdminsCount = users.filter(user => user.role === 'company_admin').length;
+  const kitchenAdminsCount = users.filter(user => user.role === 'kitchen_admin').length;
+  const dinersCount = users.filter(user => user.role === 'diner').length;
+
+
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -318,7 +330,45 @@ const UserManagement: React.FC = () => {
         </button>
       </div>
 
-      <ul className="nav nav-tabs mb-3">
+      {/* User Count Cards */}
+      <div className="row g-3 mb-4">
+        <div className="col-md-4">
+          <div className="card shadow-sm">
+            <div className="card-body d-flex justify-content-between align-items-center">
+              <div>
+                <h6 className="card-subtitle mb-2 text-muted">Administradores de Empresa</h6>
+                <h2 className="card-title mb-0">{companyAdminsCount}</h2>
+              </div>
+              <UserCog className="text-primary" size={40} />
+            </div>
+          </div>
+        </div>
+        <div className="col-md-4">
+          <div className="card shadow-sm">
+            <div className="card-body d-flex justify-content-between align-items-center">
+              <div>
+                <h6 className="card-subtitle mb-2 text-muted">Administradores de Cocina</h6>
+                <h2 className="card-title mb-0">{kitchenAdminsCount}</h2>
+              </div>
+              <ChefHat className="text-success" size={40} />
+            </div>
+          </div>
+        </div>
+        <div className="col-md-4">
+          <div className="card shadow-sm">
+            <div className="card-body d-flex justify-content-between align-items-center">
+              <div>
+                <h6 className="card-subtitle mb-2 text-muted">Comensales</h6>
+                <h2 className="card-title mb-0">{dinersCount}</h2>
+              </div>
+              <Users className="text-info" size={40} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <ul className="nav nav-underline mb-3">
         <li className="nav-item">
           <button className={`nav-link d-flex align-items-center ${activeTab === 'company_admin' ? 'active' : ''}`} onClick={() => setActiveTab('company_admin')}>
             <UserCog className="me-2" size={18} />Administradores de Empresa

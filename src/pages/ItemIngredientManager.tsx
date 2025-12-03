@@ -171,14 +171,14 @@ const ItemIngredientManager: React.FC = () => {
           <h5 className="mb-3">{editingIngredient ? 'Editar Ingrediente' : 'Crear Nuevo Ingrediente'}</h5>
           <form onSubmit={handleSubmitIngredient}>
             {error && <div className="alert alert-danger">{error}</div>}
-            <div className="row g-3">
-              <div className="col-md-6">
+            <div className="row g-3 align-items-end">
+              <div className="col-md-4">
                 <label htmlFor="name" className="form-label">Nombre</label>
-                <input type="text" id="name" name="name" className="form-control" value={ingredientDto.name} onChange={handleDtoChange} required />
+                <input type="text" id="name" name="name" className="form-control form-control-sm" value={ingredientDto.name} onChange={handleDtoChange} required />
               </div>
-              <div className="col-md-6">
+              <div className="col-md-2">
                 <label htmlFor="unit" className="form-label">Unidad</label>
-                <select id="unit" name="unit" className="form-select" value={ingredientDto.unit} onChange={handleDtoChange}>
+                <select id="unit" name="unit" className="form-select form-select-sm" value={ingredientDto.unit} onChange={handleDtoChange}>
                   <option value="unit">Unidad</option>
                   <option value="kg">Kilogramo (kg)</option>
                   <option value="g">Gramo (g)</option>
@@ -186,17 +186,17 @@ const ItemIngredientManager: React.FC = () => {
                   <option value="l">Litro (l)</option>
                 </select>
               </div>
-              <div className="col-md-4">
+              <div className="col-md-2">
                 <label htmlFor="quantityInStock" className="form-label">Stock Inicial</label>
-                <input type="number" id="quantityInStock" name="quantityInStock" className="form-control" value={ingredientDto.quantityInStock ?? ''} onChange={handleDtoChange} />
+                <input type="number" id="quantityInStock" name="quantityInStock" className="form-control form-control-sm" value={ingredientDto.quantityInStock ?? ''} onChange={handleDtoChange} />
               </div>
-              <div className="col-md-4">
+              <div className="col-md-2">
                 <label htmlFor="minStock" className="form-label">Stock Mínimo</label>
-                <input type="number" id="minStock" name="minStock" className="form-control" value={ingredientDto.minStock ?? ''} onChange={handleDtoChange} />
+                <input type="number" id="minStock" name="minStock" className="form-control form-control-sm" value={ingredientDto.minStock ?? ''} onChange={handleDtoChange} />
               </div>
-              <div className="col-md-4">
+              <div className="col-md-2">
                 <label htmlFor="cost" className="form-label">Costo</label>
-                <input type="number" step="0.01" id="cost" name="cost" className="form-control" value={ingredientDto.cost ?? ''} onChange={handleDtoChange} />
+                <input type="number" step="0.01" id="cost" name="cost" className="form-control form-control-sm" value={ingredientDto.cost ?? ''} onChange={handleDtoChange} />
               </div>
             </div>
             <div className="d-flex justify-content-end mt-3">

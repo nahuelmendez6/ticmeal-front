@@ -407,7 +407,23 @@ const ItemManagement: React.FC = () => {
       });
 
       if (!response.ok) throw new Error('Error al eliminar el ítem');
-      await fetchMenuItems(); // Re-fetch para actualizar la lista
+      
+      // Volver a cargar los ítems para reflejar la eliminación
+      const itemsResponse = await fetch('http://localhost:3000/menu-items', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!itemsResponse.ok) throw new Error('Error al recargar los ítems');
+      const updatedItemsData: MenuItem[] = await itemsResponse.json();
+      const activeItems = updatedItemsData.filter(item => item.isActive);
+      setItems(activeItems);
+
+      // Comprobar si la categoría seleccionada sigue existiendo
+      const categoryStillExists = activeItems.some(item => item.category?.name === selectedCategory);
+      if (!categoryStillExists && categories.length > 0) {
+        // Si no, seleccionar la primera categoría que tenga items
+        const firstCategoryWithItems = categories.find(cat => activeItems.some(item => item.category?.id === cat.id));
+        setSelectedCategory(firstCategoryWithItems ? firstCategoryWithItems.name : null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocurrió un error al eliminar el ítem');
     } finally {
