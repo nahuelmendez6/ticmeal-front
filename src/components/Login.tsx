@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-import logo from '../assets/logo.png'; // Placeholder, replace with actual logo
+import logo from '../assets/logo.png';
+import loginImg from '../assets/login-img.png';
 
 interface LoginProps {
   showRegisterLink?: boolean;
@@ -108,14 +109,23 @@ const Login: React.FC<LoginProps> = ({ showRegisterLink = false }) => {
 
         {/* Right Column - Promotional Content */}
         <div className="col-12 col-lg-6 d-flex align-items-center justify-content-center auth-right-column">
-          <div className="w-100 px-3 px-md-5 py-5" style={{ maxWidth: '500px' }}>
+          <div className="w-100 px-3 px-md-5 pt-0 pb-5" style={{ maxWidth: '500px' }}>
             <div className="text-center text-lg-start">
-              <h2 className="fw-bold mb-3" style={{ color: '#FF6B35', fontSize: '2rem' }}>
+              {/* <h2 className="fw-bold mb-3" style={{ color: '#FF6B35', fontSize: '2rem' }}>
                 ¡Gestiona tu comedor de manera eficiente!
-              </h2>
-              <p className="text-dark mb-4 fs-5">
+              </h2> */}
+              {/* <p className="text-dark mb-4 fs-5">
                 Sistema completo de gestión para comedores empresariales
-              </p>
+              </p> */}
+              <img
+                src={loginImg}
+                alt="Gestión de comedor"
+                className="img-fluid d-block mx-auto mx-lg-0 mb-2"
+                style={{ maxWidth: '350px' }}
+              />
+              <h3 className="fw-bold mb-3" style={{ color: '#FF6B35', fontSize: '2rem' }}>
+                ¡Gestiona tu comedor de manera eficiente!
+              </h3>
               
               <ul className="list-unstyled mb-4">
                 <li className="mb-3 d-flex align-items-start">
@@ -132,10 +142,10 @@ const Login: React.FC<LoginProps> = ({ showRegisterLink = false }) => {
                 </li>
               </ul>
 
-              <div className="d-flex align-items-center justify-content-center justify-content-lg-start">
+              {/* <div className="d-flex align-items-center justify-content-center justify-content-lg-start">
                 <i className="bi bi-share-fill me-2" style={{ fontSize: '1.2rem', color: '#FF6B35' }}></i>
                 <span className="text-muted">Accede desde cualquier dispositivo</span>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

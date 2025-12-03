@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import UserManagement from './components/UserManagement'
 import Layout from './components/Layout';
 import MenuManagementPage from './pages/MenuManagementPage';
+import ShiftManagement from './pages/ShiftManagement';
 import Verify from './pages/Verify';
 import './App.css';
 
@@ -62,6 +63,13 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <UserManagement />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/shifts" element={
+            <ProtectedRoute>
+              <Layout>
+                <ShiftManagement />
               </Layout>
             </ProtectedRoute>
           } />

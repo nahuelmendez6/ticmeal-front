@@ -205,15 +205,27 @@ const ItemManagement: React.FC = () => {
     setSubmitting(true);
     setError(null);
 
-    const payload = {
-      name: newItem.name || undefined,
-      stock: parseInt(newItem.stock, 10) || 0,
-      minStock: parseInt(newItem.minStock, 10) || 0,
-      cost: parseFloat(newItem.cost) || 0,
-      iconName: newItem.iconName,
-      categoryId: parseInt(newItem.categoryId, 10),
-    };
+    let payload: any;
+    if (editingItem) {
+      payload = {
+        name: newItem.name,
+        stock: parseInt(newItem.stock, 10),
+        minStock: parseInt(newItem.minStock, 10),
+        cost: parseFloat(newItem.cost),
+        iconName: newItem.iconName,
+        categoryId: parseInt(newItem.categoryId, 10),
+      };
 
+    } else {
+      payload = {
+        name: newItem.name,
+        stock: parseInt(newItem.stock, 10) || 0,
+        minStock: parseInt(newItem.minStock, 10) || 0,
+        cost: parseFloat(newItem.cost) || 0,
+        iconName: newItem.iconName,
+        categoryId: parseInt(newItem.categoryId, 10),
+      };
+    }
     const url = editingItem
       ? `http://localhost:3000/menu-items/${editingItem.id}`
       : 'http://localhost:3000/menu-items';
@@ -238,24 +250,29 @@ const ItemManagement: React.FC = () => {
 
       const savedItem: MenuItem = await response.json();
 
-      // --- Guardar la receta ---
-      if (recipeIngredients.length > 0) {
-        const recipePromises = recipeIngredients.map(recipeIng => {
-          const recipePayload = {
-            menuItemId: savedItem.id,
-            ingredientId: recipeIng.ingredientId,
-            quantity: recipeIng.quantity,
-          };
-          return fetch('http://localhost:3000/recipe-ingredients', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify(recipePayload),
+      if (editingItem) {
+        // --- Actualizar la receta ---
+        await handleUpdateRecipe(savedItem.id);
+      } else {
+        // --- Guardar la receta para un nuevo ítem ---
+        if (recipeIngredients.length > 0) {
+          const recipePromises = recipeIngredients.map(recipeIng => {
+            const recipePayload = {
+              menuItemId: savedItem.id,
+              ingredientId: recipeIng.ingredientId,
+              quantity: recipeIng.quantity,
+            };
+            return fetch('http://localhost:3000/recipe-ingredients', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
+              body: JSON.stringify(recipePayload),
+            });
           });
-        });
-        await Promise.all(recipePromises);
+          await Promise.all(recipePromises);
+        }
       }
 
       // Re-fetch items to get the updated list
@@ -278,6 +295,65 @@ const ItemManagement: React.FC = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleUpdateRecipe = async (menuItemId: number) => {
+    if (!editingItem) return;
+
+    const originalRecipe = editingItem.recipeIngredients || [];
+    const newRecipe = recipeIngredients;
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('No autenticado');
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    };
+
+    // 1. Ingredients to delete
+    const ingredientsToDelete = originalRecipe.filter(
+      orig => !newRecipe.some(n => n.ingredientId === orig.ingredient.id)
+    );
+
+    // 2. Ingredients to add
+    const ingredientsToAdd = newRecipe.filter(
+      n => !originalRecipe.some(orig => orig.ingredient.id === n.ingredientId)
+    );
+
+    // 3. Ingredients to update
+    const ingredientsToUpdate = newRecipe.filter(n => {
+      const original = originalRecipe.find(orig => orig.ingredient.id === n.ingredientId);
+      return original && original.quantity !== n.quantity;
+    });
+
+    const deletePromises = ingredientsToDelete.map(ing =>
+      fetch(`http://localhost:3000/recipe-ingredients/${ing.id}`, {
+        method: 'DELETE',
+        headers,
+      })
+    );
+
+    const updatePromises = ingredientsToUpdate.map(ing =>
+      fetch(`http://localhost:3000/recipe-ingredients/${originalRecipe.find(o => o.ingredient.id === ing.ingredientId)?.id}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ quantity: ing.quantity }),
+      })
+    );
+
+    const addPromises = ingredientsToAdd.map(ing =>
+      fetch('http://localhost:3000/recipe-ingredients', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          menuItemId: menuItemId,
+          ingredientId: ing.ingredientId,
+          quantity: ing.quantity,
+        }),
+      })
+    );
+
+    await Promise.all([...deletePromises, ...addPromises, ...updatePromises]);
   };
 
   const handleEditClick = (item: MenuItem) => {

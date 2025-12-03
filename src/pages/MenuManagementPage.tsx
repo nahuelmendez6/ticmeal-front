@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ItemManagement from './ItemManagement';
 import ItemIngredientManager from './ItemIngredientManager';
+import ShiftMenuAssignment from './ShiftMenuAssignment';
 
 const MenuManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('items');
@@ -10,7 +11,7 @@ const MenuManagementPage: React.FC = () => {
       case 'items':
         return <ItemManagement />;
       case 'shifts':
-        return <div className="p-4">Contenido de Asignar Ítems a Turnos</div>;
+        return <ShiftMenuAssignment />;
       case 'ingredients':
         return <ItemIngredientManager />;
       default:
@@ -35,7 +36,7 @@ const MenuManagementPage: React.FC = () => {
         </li>
         <li className="nav-item">
           <button className={`nav-link ${activeTab === 'shifts' ? 'active' : ''}`} onClick={() => setActiveTab('shifts')}>
-            Asignar Items a Turnos
+            Turnos
           </button>
         </li>
       </ul>
