@@ -107,6 +107,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </Link>
           </li>
         );
+        menuItems.push(
+            <li key="active-shift-form" className={isActive('/active-shift') ? 'active' : ''}>
+              <Link to="/active-shift" className="d-flex align-items-center p-3 text-white">
+                <i className="bi bi-card-checklist me-2"></i> Pedido de Turno
+              </Link>
+            </li>)
     }
 
     return menuItems;

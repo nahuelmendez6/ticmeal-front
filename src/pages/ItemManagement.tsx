@@ -41,6 +41,8 @@ interface MenuItem {
   category: Category | null;
   iconName: string | null;
   isActive: boolean;
+  /** cantudad maxima de item permitido en una orden */
+  maxOrder: number | null;
   recipeIngredients: {
     id: number;
     quantity: number;
@@ -129,6 +131,7 @@ const ItemManagement: React.FC = () => {
     stock: '0',
     minStock: '0',
     categoryId: '',
+    maxOrder: '0',
     cost: '0',
     iconName: 'Coffee',
   });
@@ -212,6 +215,7 @@ const ItemManagement: React.FC = () => {
         stock: parseInt(newItem.stock, 10),
         minStock: parseInt(newItem.minStock, 10),
         cost: parseFloat(newItem.cost),
+        maxOrder: newItem.maxOrder ? parseInt(newItem.maxOrder, 10) : null,
         iconName: newItem.iconName,
         categoryId: parseInt(newItem.categoryId, 10),
       };
@@ -222,6 +226,7 @@ const ItemManagement: React.FC = () => {
         stock: parseInt(newItem.stock, 10) || 0,
         minStock: parseInt(newItem.minStock, 10) || 0,
         cost: parseFloat(newItem.cost) || 0,
+        maxOrder: newItem.maxOrder ? parseInt(newItem.maxOrder, 10) : null,
         iconName: newItem.iconName,
         categoryId: parseInt(newItem.categoryId, 10),
       };
@@ -283,6 +288,7 @@ const ItemManagement: React.FC = () => {
         name: '',
         stock: '0',
         minStock: '0',
+        maxOrder: '0',
         categoryId: categories.length > 0 ? String(categories[0].id) : '',
         cost: '0',
         iconName: 'Coffee',
@@ -362,6 +368,7 @@ const ItemManagement: React.FC = () => {
       name: item.name,
       stock: String(item.stock ?? '0'),
       minStock: String(item.minStock ?? '0'),
+      maxOrder: String(item.maxOrder ?? '0'),
       cost: String(item.cost ?? '0'),
       categoryId: String(item.category?.id ?? ''),
       iconName: item.iconName ?? 'Coffee',
@@ -382,7 +389,7 @@ const ItemManagement: React.FC = () => {
   const handleCancelEdit = () => {
     setEditingItem(null);
     // Reset form to its initial state for creation
-    setNewItem({ name: '', stock: '0', minStock: '0', categoryId: categories.length > 0 ? String(categories[0].id) : '', cost: '0', iconName: 'Coffee' });
+    setNewItem({ name: '', stock: '0', minStock: '0', maxOrder: '0', categoryId: categories.length > 0 ? String(categories[0].id) : '', cost: '0', iconName: 'Coffee' });
     setRecipeIngredients([]);
   };
 
@@ -483,13 +490,17 @@ const ItemManagement: React.FC = () => {
                   <input type="text" className="form-control" id="itemName" name="name" value={newItem.name} onChange={handleInputChange} required />
                 </div>
                 <div className="row">
-                  <div className="col-sm-6 mb-3">
+                  <div className="col-sm-4 mb-3">
                     <label htmlFor="itemStock" className="form-label">Stock</label>
                     <input type="number" className="form-control" id="itemStock" name="stock" value={newItem.stock} onChange={handleInputChange} />
                   </div>
-                  <div className="col-sm-6 mb-3">
+                  <div className="col-sm-4 mb-3">
                     <label htmlFor="itemMinStock" className="form-label">Stock Mínimo</label>
                     <input type="number" className="form-control" id="itemMinStock" name="minStock" value={newItem.minStock} onChange={handleInputChange} />
+                  </div>
+                  <div className="col-sm-4 mb-3">
+                    <label htmlFor="itemMaxOrder" className="form-label">Max. por Orden</label>
+                    <input type="number" className="form-control" id="itemMaxOrder" name="maxOrder" value={newItem.maxOrder} onChange={handleInputChange} />
                   </div>
                 </div>
               </div>
@@ -597,69 +608,64 @@ const ItemManagement: React.FC = () => {
         </div>
 
         {/* --- List Section --- */}
-        <div className="row">
-          {/* Category List */}
-          <div className="col-md-3">
-            {loading ? (
-              <div className="text-center"><div className="spinner-border spinner-border-sm" role="status"><span className="visually-hidden">Cargando...</span></div></div>
-            ) : (
-              <div className="list-group">
-                {displayedCategories.map(cat => (
+        <div>
+          {/* Category Tabs */}
+          {loading ? (
+            <div className="text-center"><div className="spinner-border spinner-border-sm" role="status"><span className="visually-hidden">Cargando...</span></div></div>
+          ) : (
+            <ul className="nav nav-tabs mb-3">
+              {displayedCategories.map(cat => (
+                <li className="nav-item" key={cat.id}>
                   <button
-                    key={cat.id}
-                    type="button"
-                    className={`list-group-item list-group-item-action ${selectedCategory === cat.name ? 'active' : ''}`}
+                    className={`nav-link ${selectedCategory === cat.name ? 'active' : ''}`}
                     onClick={() => setSelectedCategory(cat.name)}
                   >
                     {formatCategoryName(cat.name)}
                   </button>
-                ))}
-              </div>
-            )}
-          </div>
+                </li>
+              ))}
+            </ul>
+          )}
 
           {/* Items Table */}
-          <div className="col-md-9">
-            <h5 className="mb-3">{selectedCategory ? formatCategoryName(selectedCategory) : 'Seleccione una categoría'}</h5>
-            <div className="table-responsive">
-              <table className="table table-hover align-middle">
-                <thead className="table-light">
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Ícono</th>
-                    <th>Stock</th>
-                    <th>Stock Mínimo</th>
-                    <th>Costo</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr><td colSpan={5} className="text-center"><div className="spinner-border" role="status"><span className="visually-hidden">Cargando...</span></div></td></tr>
-                  ) : (
-                    filteredItems.map(item => (
-                      <tr key={item.id}>
-                        <td>{item.name}</td>
-                        <td>
-                          {item.iconName && <IconComponent iconName={item.iconName} />}
-                        </td>
-                        <td>{item.stock}</td>
-                        <td>{item.minStock}</td>
-                        <td>{item.cost ? `$${item.cost}` : '-'}</td>
-                        <td>
-                          <button className="btn btn-sm btn-outline-primary me-2" title="Editar" style={{ border: 'none' }} onClick={() => handleEditClick(item)}>
-                            <FilePenLine size={18} />
-                          </button>
-                          <button className="btn btn-sm btn-outline-danger" title="Eliminar" style={{ border: 'none' }} onClick={() => handleDeleteClick(item.id)}>
-                            <Trash2 size={18} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+          <div className="table-responsive">
+            <table className="table table-hover align-middle">
+              <thead className="table-light">
+                <tr>
+                  <th>Nombre</th>
+                  <th>Ícono</th>
+                  <th>Stock</th>
+                  <th>Stock Mínimo</th>
+                  <th>Max. por Orden</th>
+                  <th>Costo</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={7} className="text-center"><div className="spinner-border" role="status"><span className="visually-hidden">Cargando...</span></div></td></tr>
+                ) : (
+                  filteredItems.map(item => (
+                    <tr key={item.id}>
+                      <td>{item.name}</td>
+                      <td>{item.iconName && <IconComponent iconName={item.iconName} />}</td>
+                      <td>{item.stock === null || item.stock === 0 ? 'No especificado' : item.stock}</td>
+                      <td>{item.minStock === null || item.minStock === 0 ? 'No especificado' : item.minStock}</td>
+                      <td>{item.maxOrder === null || item.maxOrder === 0 ? 'No especificado' : item.maxOrder}</td>
+                      <td>{item.cost === null || parseFloat(item.cost) === 0 ? 'No especificado' : `$${item.cost}`}</td>
+                      <td>
+                        <button className="btn btn-sm btn-outline-primary me-2" title="Editar" style={{ border: 'none' }} onClick={() => handleEditClick(item)}>
+                          <FilePenLine size={18} />
+                        </button>
+                        <button className="btn btn-sm btn-outline-danger" title="Eliminar" style={{ border: 'none' }} onClick={() => handleDeleteClick(item.id)}>
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

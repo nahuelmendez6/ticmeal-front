@@ -9,6 +9,7 @@ import UserManagement from './components/UserManagement'
 import Layout from './components/Layout';
 import MenuManagementPage from './pages/MenuManagementPage';
 import ShiftManagement from './pages/ShiftManagement';
+import ActiveShiftForm from './components/ActiveShiftForm';
 import Verify from './pages/Verify';
 import './App.css';
 
@@ -56,6 +57,14 @@ function App() {
                 <Layout>  
                   <MenuManagementPage />
                 </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/active-shift"
+            element={
+              <ProtectedRoute>
+                  <ActiveShiftForm />
               </ProtectedRoute>
             }
           />
