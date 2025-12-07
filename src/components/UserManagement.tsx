@@ -42,7 +42,7 @@ interface NewUser {
   lastName: string;
   email: string;
   role: 'diner' | 'kitchen_admin';
-  observationIds: number[];
+  observationsIds: number[];
 }
 
 // Icon Mapping
@@ -83,7 +83,7 @@ const UserManagement: React.FC = () => {
     lastName: '',
     email: '',
     role: 'diner',
-    observationIds: [],
+    observationsIds: [],
   });
 
   const fetchUsers = useCallback(async () => {
@@ -150,7 +150,7 @@ const UserManagement: React.FC = () => {
       lastName: '',
       email: '',
       role: 'diner',
-      observationIds: [],
+      observationsIds: [],
     });
     setEmailVerification('');
     setObservationsOpen(false);
@@ -164,7 +164,7 @@ const UserManagement: React.FC = () => {
       lastName: user.lastName || '',
       email: user.email,
       role: user.role as 'diner' | 'kitchen_admin',
-      observationIds: user.observations ? user.observations.map(obs => obs.id) : [],
+      observationsIds: user.observations ? user.observations.map(obs => obs.id) : [],
     });
     setEmailVerification(user.email);
     setShowModal(true);
@@ -178,9 +178,9 @@ const UserManagement: React.FC = () => {
   const handleObservationChange = (observationId: number) => {
     setNewUser(prev => ({
       ...prev,
-      observationIds: prev.observationIds.includes(observationId)
-        ? prev.observationIds.filter(id => id !== observationId)
-        : [...prev.observationIds, observationId],
+      observationsIds: prev.observationsIds.includes(observationId)
+        ? prev.observationsIds.filter(id => id !== observationId)
+        : [...prev.observationsIds, observationId],
     }));
   };
 
@@ -210,12 +210,12 @@ const UserManagement: React.FC = () => {
       if (newUser.email !== editingUser.email) payload.email = newUser.email;
       
       const oldObservationIds = new Set(editingUser.observations.map(o => o.id));
-      const newObservationIds = new Set(newUser.observationIds);
+      const newObservationIds = new Set(newUser.observationsIds);
       if (oldObservationIds.size !== newObservationIds.size || ![...oldObservationIds].every(id => newObservationIds.has(id))) {
-        payload.observationsIds = newUser.observationIds;
+        payload.observationsIds = newUser.observationsIds;
       }
     } else {
-      payload = { ...newUser, observationsIds: newUser.observationIds };
+      payload = { ...newUser, observationsIds: newUser.observationsIds };
     }
 
     try {
@@ -459,7 +459,7 @@ const UserManagement: React.FC = () => {
                                       type="checkbox"
                                       value={obs.id}
                                       id={`obs-${obs.id}`}
-                                      checked={newUser.observationIds.includes(obs.id)}
+                                      checked={newUser.observationsIds.includes(obs.id)}
                                       onChange={() => handleObservationChange(obs.id)}
                                     />
                                     <label className="form-check-label d-flex align-items-center" htmlFor={`obs-${obs.id}`}>

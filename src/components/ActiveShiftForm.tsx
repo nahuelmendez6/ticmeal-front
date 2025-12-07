@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import {
   Coffee, Apple, Pizza, Beef, Salad, Soup, Utensils, Wine,
   Banana, Cookie, Croissant, CupSoda, CakeSlice, Beer, Donut, EggFried,
-  GlassWater, Milk, IceCream, Drumstick, Ham, Hamburger, AlertTriangle
+  GlassWater, Milk, IceCream, Drumstick, Ham, Hamburger, AlertTriangle, BottleWine, Sandwich
 } from 'lucide-react';
 
 // --- Icon Mapping ---
-const iconMap: { [key: string]: React.ElementType } = { Coffee, Sandwich: Utensils, Apple, Pizza, Beef, Salad, Soup, Utensils, Wine, Banana, Cookie, Croissant, CupSoda, CakeSlice, Beer, Donut, Egg: EggFried, EggFried, GlassWater, Milk, IceCream, Drumstick, Ham, Burger: Hamburger, Hamburger };
+const iconMap: { [key: string]: React.ElementType } = { Coffee, Sandwich: Sandwich, Apple, Pizza, Beef, Salad, Soup, Utensils, Wine, Banana, Cookie, Croissant, CupSoda, CakeSlice, Beer, Donut, Egg: EggFried, EggFried, GlassWater, Milk, IceCream, Drumstick, Ham, Burger: Hamburger, Hamburger, BottleWine: BottleWine };
 
 // --- 1. Definición de Tipos para los Datos de la API ---
 interface Category {
@@ -34,6 +34,42 @@ interface Shift {
   menuActive: boolean;
   menuItems: MenuItem[];
 }
+
+// --- 1.1. Definición de Tipos para la Respuesta del Ticket ---
+interface TicketUser {
+  id: number;
+  firstName: string;
+  lastName:string;
+}
+
+interface TicketShift {
+  id: number;
+  name: string;
+}
+
+interface TicketMenuItem {
+  id: number;
+  name: string;
+}
+
+interface TicketObservation {
+  id: number;
+  description: string;
+}
+
+interface Ticket {
+  id: number;
+  status: string;
+  date: string;
+  time: string;
+  user: TicketUser;
+  shift: TicketShift;
+  menuItems: TicketMenuItem[];
+  observations: TicketObservation[];
+  createdAt: string;
+}
+
+
 
 // --- Icon Component ---
 const MenuItemIcon: React.FC<{ iconName: string }> = ({ iconName }) => {
@@ -101,9 +137,12 @@ const ActiveShiftForm: React.FC = () => {
   const [shift, setShift] = useState<Shift | null>(null);
   const [selectedItems, setSelectedItems] = useState<Map<number, number>>(new Map());
   const [pin, setPin] = useState<string>('');
+  const [createdTicket, setCreatedTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
+
   // --- Efecto para Obtener Datos de la API ---
   useEffect(() => {
     const fetchActiveShift = async () => {
@@ -166,12 +205,51 @@ const ActiveShiftForm: React.FC = () => {
     });
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    console.log('PIN Ingresado:', pin);
-    console.log('Items Seleccionados (ID -> Cantidad):', Object.fromEntries(selectedItems));
-    alert('Pedido enviado. Revisa la consola para ver los datos.');
+    setSubmitting(true);
+    setError(null);
+
+    // Construir el array de menuItemIds
+    const menuItemIds: number[] = [];
+    selectedItems.forEach((quantity, id) => {
+      for (let i = 0; i < quantity; i++) {
+        menuItemIds.push(id);
+      }
+    });
+
+    const payload = {
+      pin,
+      menuItemIds,
+    };
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch('http://localhost:3000/tickets', {
+        method: 'POST',
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error: ${response.status}`);
+      }
+
+      const newTicket: Ticket = await response.json();
+      setCreatedTicket(newTicket);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo crear el ticket.');
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
   };
+
 
   // --- Renderizado Condicional ---
   if (loading) {
@@ -201,15 +279,124 @@ const ActiveShiftForm: React.FC = () => {
 
   if (!shift) {
     return (
-      <div className="d-flex justify-content-center align-items-center min-vh-100 text-center">
-        <div>
-          <i className="bi bi-calendar-x fs-1 text-muted"></i>
-          <p className="mt-3 fs-5 text-muted">No hay turnos activos en este momento.</p>
+      <div className="container">
+        <div className="row justify-content-center min-vh-100 align-items-center">
+          <div className="col-12 col-md-8 col-lg-6">
+            <div className="card shadow-sm text-center border-0">
+              <div className="card-body p-5">
+                <i className="bi bi-emoji-frown fs-1 text-warning"></i>
+                <h2 className="h4 mt-3 mb-2">No hay turnos activos</h2>
+                <p className="text-muted">
+                  Por favor, vuelve a intentarlo más tarde o contacta al administrador si crees que es un error.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
+  // --- Componente para Mostrar el Ticket ---
+const TicketView: React.FC<{ ticket: Ticket; onNewOrder: () => void, allMenuItems: MenuItem[] }> = ({ ticket, onNewOrder, allMenuItems }) => {
+  const getStatusBadge = (status: string) => {
+    const badgeMap: { [key: string]: { text: string; className: string } } = {
+      pending: { text: 'Pendiente', className: 'bg-warning text-dark' },
+      approved: { text: 'Aprobado', className: 'bg-success' },
+      rejected: { text: 'Rechazado', className: 'bg-danger' },
+      delivered: { text: 'Entregado', className: 'bg-info' },
+      cancelled: { text: 'Cancelado', className: 'bg-secondary' },
+    };
+    const badge = badgeMap[status] || { text: status, className: 'bg-light text-dark' };
+    return <span className={`badge fs-6 ${badge.className}`}>{badge.text}</span>;
+  };
+
+  const formattedTicketId = `${ticket.shift.name.charAt(0).toUpperCase()}-${ticket.id}`;
+
+  const fecha = new Date(ticket.date).toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+  // Agrupar items para mostrar cantidades
+  const groupedItems = ticket.menuItems.reduce((acc, item) => {
+    const existing = acc.get(item.id);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      const originalItem = allMenuItems.find(mi => mi.id === item.id);
+      acc.set(item.id, {
+        name: item.name,
+        quantity: 1,
+        iconName: originalItem?.iconName || 'Utensils',
+      });
+    }
+    return acc;
+  }, new Map<number, { name: string; quantity: number; iconName: string }>());
+
+  return (
+    <div className="container">
+      <div className="row justify-content-center min-vh-100 align-items-center">
+        <div className="col-12 col-md-8 col-lg-6">
+          <div className="card shadow-lg">
+            <div className="card-body p-4 p-md-5 ticket-success text-center">
+              <h3 className="fw-bold mb-3 d-flex align-items-center justify-content-center text-success">
+                <i className="bi bi-check-circle-fill me-2"></i>
+                Ticket Generado
+              </h3>
+
+              <p className="h5 text-muted mb-3">#{formattedTicketId}</p>
+
+              {getStatusBadge(ticket.status)}
+
+              <div className="text-start mt-3">
+                <p style={{ fontSize: '1.1rem' }}><strong>Nombre:</strong> {ticket.user.firstName} {ticket.user.lastName}</p>
+                <p style={{ fontSize: '1.1rem' }}><strong>Turno:</strong> {ticket.shift.name}</p>
+                <p style={{ fontSize: '1.1rem' }}><strong>Fecha:</strong> {fecha}</p>
+                <p style={{ fontSize: '1.1rem' }}><strong>Hora:</strong> {ticket.time}</p>
+              </div>
+
+              {groupedItems.size > 0 && (
+                <div className="mt-3 text-start">
+                  <h6 className="text-secondary">Ítems seleccionados:</h6>
+                  <ul className="list-group list-group-flush">
+                    {Array.from(groupedItems.entries()).map(([id, item]) => (
+                      <li key={id} className="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div className="d-flex align-items-center">
+                          <MenuItemIcon iconName={item.iconName} />
+                          <span className="ms-2">{item.name}</span>
+                        </div>
+                        <span className="badge bg-primary rounded-pill fs-6">
+                          {item.quantity}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <button className="btn btn-outline-primary mt-4 w-100" onClick={onNewOrder}>
+                <i className="bi bi-plus-circle me-2"></i>
+                Generar Nuevo Ticket
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+  // --- Renderizado del Ticket Creado ---
+  if (createdTicket) {
+    return <TicketView ticket={createdTicket} allMenuItems={shift?.menuItems || []} onNewOrder={() => {
+      setCreatedTicket(null);
+      setSelectedItems(new Map());
+      setPin('');
+      setError(null);
+    }} />;
+  }
   // --- Renderizado del Formulario ---
   return (
     <div className="container">
@@ -279,12 +466,21 @@ const ActiveShiftForm: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Alerta de error en el envío */}
+                {error && !submitting && (
+                  <div className="alert alert-danger d-flex align-items-center" role="alert">
+                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div>{error}</div>
+                  </div>
+                )}
+
                 {/* Botón de Envío */}
                 <button
                   type="submit"
                   className="btn btn-primary btn-lg w-100"
-                  disabled={!pin || selectedItems.size === 0}
+                  disabled={!pin || pin.length < 4 || selectedItems.size === 0 || submitting}
                 >
+                  {submitting && <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>}
                   <i className="bi bi-check-circle me-2"></i>
                   Confirmar Pedido ({Array.from(selectedItems.values()).reduce((acc, val) => acc + val, 0)})
                 </button>
