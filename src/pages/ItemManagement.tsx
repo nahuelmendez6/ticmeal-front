@@ -1,188 +1,64 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Plus, 
-  Coffee, 
-  Sandwich, 
-  Apple, 
-  Pizza, 
-  Trash2, 
-  FilePenLine,
-  Beef,
-  Hamburger,
-  IceCreamBowl,
-  Salad,
-  Soup,
-  Utensils,
-  BottleWine,
-  Banana,
-  Cookie,
-  Croissant,
-  Dessert,
-  Drumstick,
-  EggFried,
-  Ham,
-  IceCreamCone,
-  CupSoda,
-  CakeSlice,
-  Beer,
-  Torus,
-  Donut,
-  Egg,
-  GlassWater,
-  Milk,
-} from 'lucide-react';
-
-// --- Mock Data and Types ---
-interface MenuItem {
-  id: number;
-  name: string;
-  stock: number | null;
-  minStock: number | null;
-  cost: string | null;
-  category: Category | null;
-  iconName: string | null;
-  isActive: boolean;
-  /** cantudad maxima de item permitido en una orden */
-  maxOrder: number | null;
-  recipeIngredients: {
-    id: number;
-    quantity: number;
-    ingredient: {
-      id: number;
-      name: string;
-      unit: string;
-    }
-  }[];
-}
-
-interface Category {
-  id: number;
-  name: string;
-}
-
-interface SystemIngredient {
-  id: number;
-  name: string;
-  unit: string;
-}
-
-interface RecipeIngredient {
-  ingredientId: number;
-  name: string;
-  quantity: number;
-  unit: string;
-}
-
-const iconMap: { [key: string]: React.ElementType } = {
-  Coffee,
-  Sandwich,
-  Apple,
-  Pizza,
-  Beef,
-  Hamburger,
-  IceCreamBowl,
-  Salad,
-  Soup,
-  Utensils,
-  BottleWine,
-  Banana,
-  Cookie,
-  Croissant,
-  Dessert,
-  Drumstick,
-  EggFried,
-  Ham,
-  IceCreamCone,
-  CupSoda,
-  CakeSlice,
-  Beer,
-  Torus,
-  Donut,
-  Egg,
-  GlassWater,
-  Milk,
-};
-
-const IconComponent: React.FC<{ iconName: string }> = ({ iconName }) => {
-  const Icon = iconMap[iconName] || Coffee;
-  return <Icon size={18} className="me-2" />;
-};
+import CategoryTabs from '../components/menu/CategoryTabs';
+import ItemForm from '../components/menu/ItemForm';
+import ItemList from '../components/menu/ItemList';
+import RecipeEditor from '../components/menu/RecipeEditor';
+import DeleteModal from '../components/menu/DeleteModal';
+import { useMenuItems } from '../hooks/useMenu';
+import { useRecipes } from '../hooks/useRecipes';
+import { categoriesService } from '../services/categories.service';
+import { ingredientsService } from '../services/ingredient.service';
+import type { Category, MenuItem } from '../types/menu';
+import type { Ingredient } from '../types/ingtredient';
+import type { RecipeInput, RecipeIngredient } from '../types/recipe';
 
 // --- Main Component ---
 const ItemManagement: React.FC = () => {
-  const [items, setItems] = useState<MenuItem[]>([]);
+  const { items, fetchItems, createItem, updateItem, deleteItem } = useMenuItems();
+  const token = localStorage.getItem('token') || '';
+  const { syncRecipe } = useRecipes(token);
+
   const [categories, setCategories] = useState<Category[]>([]);
-  const [systemIngredients, setSystemIngredients] = useState<SystemIngredient[]>([]);
-  const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>([]);
+  const [systemIngredients, setSystemIngredients] = useState<Ingredient[]>([]);
+  const [recipeInputs, setRecipeInputs] = useState<RecipeInput[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
-
-  const [newRecipeIngredient, setNewRecipeIngredient] = useState({
-    ingredientId: '',
-    quantity: '1',
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [newItem, setNewItem] = useState({
     name: '',
-    stock: '0',
-    minStock: '0',
+    stock: 0,
+    minStock: 0,
     categoryId: '',
-    maxOrder: '0',
-    cost: '0',
+    maxOrder: 0,
+    cost: 0,
     iconName: 'Coffee',
   });
-
-  const fetchMenuItems = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No autenticado');
-      const response = await fetch('http://localhost:3000/menu-items', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (!response.ok) throw new Error('Error al cargar los ítems del menú');
-      const itemsData: MenuItem[] = await response.json();
-      // Filtrar para mostrar solo los ítems activos
-      setItems(itemsData.filter(item => item.isActive));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ocurrió un error desconocido al cargar ítems');
-    }
-  }, []);
 
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem('token');
         if (!token) throw new Error('No autenticado');
 
-        // Fetch categories
-        const categoriesResponse = await fetch('http://localhost:3000/categories/', {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        if (!categoriesResponse.ok) throw new Error('Error al cargar las categorías');
-        const categoriesData: Category[] = await categoriesResponse.json();
+        const categoriesData = await categoriesService.getAll(token);
         setCategories(categoriesData);
 
         if (categoriesData.length > 0) {
           setSelectedCategory(categoriesData[0].name);
-          setNewItem(prev => ({ ...prev, categoryId: String(categoriesData[0].id) }));
+          setNewItem(prev => ({ ...prev, categoryId: categoriesData[0].id.toString() }));
         }
 
-        // Fetch menu items
-        await fetchMenuItems();
+        await fetchItems();
 
-        // Fetch system ingredients for recipe dropdown
-        const ingredientsResponse = await fetch('http://localhost:3000/ingredients', {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        if (!ingredientsResponse.ok) throw new Error('Error al cargar los ingredientes');
-        const ingredientsData: SystemIngredient[] = await ingredientsResponse.json();
+        const ingredientsData = await ingredientsService.getAll(token);
         setSystemIngredients(ingredientsData);
+
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Ocurrió un error desconocido');
       } finally {
@@ -191,209 +67,75 @@ const ItemManagement: React.FC = () => {
     };
 
     fetchInitialData();
-  }, [fetchMenuItems]);
+  }, [fetchItems, token]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setNewItem(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleRecipeInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setNewRecipeIngredient(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
+  const handleSubmit = async (formData: typeof newItem, recipeData: RecipeInput[]) => {
+    setIsSubmitting(true);
     setError(null);
 
-    let payload: any;
-    if (editingItem) {
-      payload = {
-        name: newItem.name,
-        stock: parseInt(newItem.stock, 10),
-        minStock: parseInt(newItem.minStock, 10),
-        cost: parseFloat(newItem.cost),
-        maxOrder: newItem.maxOrder ? parseInt(newItem.maxOrder, 10) : null,
-        iconName: newItem.iconName,
-        categoryId: parseInt(newItem.categoryId, 10),
-      };
-
-    } else {
-      payload = {
-        name: newItem.name,
-        stock: parseInt(newItem.stock, 10) || 0,
-        minStock: parseInt(newItem.minStock, 10) || 0,
-        cost: parseFloat(newItem.cost) || 0,
-        maxOrder: newItem.maxOrder ? parseInt(newItem.maxOrder, 10) : null,
-        iconName: newItem.iconName,
-        categoryId: parseInt(newItem.categoryId, 10),
-      };
-    }
-    const url = editingItem
-      ? `http://localhost:3000/menu-items/${editingItem.id}`
-      : 'http://localhost:3000/menu-items';
-    const method = editingItem ? 'PATCH' : 'POST';
+    // Preparamos el payload que coincide con el DTO del backend
+    const payload = {
+      ...formData,
+      // Convertimos categoryId a número o lo dejamos undefined si no hay
+      categoryId: formData.categoryId ? parseInt(formData.categoryId, 10) : undefined,
+      // Incluimos la receta en el mismo payload
+      recipeIngredients: recipeData,
+    };
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No autenticado');
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: `Error al ${editingItem ? 'actualizar' : 'crear'} el ítem` }));
-        throw new Error(errorData.message || `Error al ${editingItem ? 'actualizar' : 'crear'} el ítem`);
-      }
-
-      const savedItem: MenuItem = await response.json();
-
       if (editingItem) {
-        // --- Actualizar la receta ---
-        await handleUpdateRecipe(savedItem.id);
+        // Enviamos el payload unificado para actualizar
+        await updateItem(editingItem.id, payload);
       } else {
-        // --- Guardar la receta para un nuevo ítem ---
-        if (recipeIngredients.length > 0) {
-          const recipePromises = recipeIngredients.map(recipeIng => {
-            const recipePayload = {
-              menuItemId: savedItem.id,
-              ingredientId: recipeIng.ingredientId,
-              quantity: recipeIng.quantity,
-            };
-            return fetch('http://localhost:3000/recipe-ingredients', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-              },
-              body: JSON.stringify(recipePayload),
-            });
-          });
-          await Promise.all(recipePromises);
-        }
+        // Enviamos el payload unificado para crear
+        await createItem(payload);
       }
 
-      // Re-fetch items to get the updated list
-      await fetchMenuItems();
-
-      // Reset form
-      setNewItem({
-        name: '',
-        stock: '0',
-        minStock: '0',
-        maxOrder: '0',
-        categoryId: categories.length > 0 ? String(categories[0].id) : '',
-        cost: '0',
-        iconName: 'Coffee',
-      });
-      setRecipeIngredients([]);
-      setEditingItem(null);
-
+      handleCancelEdit();
     } catch (err) {
       setError(err instanceof Error ? err.message : `Ocurrió un error al ${editingItem ? 'actualizar' : 'crear'} el ítem`);
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
-  };
-
-  const handleUpdateRecipe = async (menuItemId: number) => {
-    if (!editingItem) return;
-
-    const originalRecipe = editingItem.recipeIngredients || [];
-    const newRecipe = recipeIngredients;
-    const token = localStorage.getItem('token');
-    if (!token) throw new Error('No autenticado');
-
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    };
-
-    // 1. Ingredients to delete
-    const ingredientsToDelete = originalRecipe.filter(
-      orig => !newRecipe.some(n => n.ingredientId === orig.ingredient.id)
-    );
-
-    // 2. Ingredients to add
-    const ingredientsToAdd = newRecipe.filter(
-      n => !originalRecipe.some(orig => orig.ingredient.id === n.ingredientId)
-    );
-
-    // 3. Ingredients to update
-    const ingredientsToUpdate = newRecipe.filter(n => {
-      const original = originalRecipe.find(orig => orig.ingredient.id === n.ingredientId);
-      return original && original.quantity !== n.quantity;
-    });
-
-    const deletePromises = ingredientsToDelete.map(ing =>
-      fetch(`http://localhost:3000/recipe-ingredients/${ing.id}`, {
-        method: 'DELETE',
-        headers,
-      })
-    );
-
-    const updatePromises = ingredientsToUpdate.map(ing =>
-      fetch(`http://localhost:3000/recipe-ingredients/${originalRecipe.find(o => o.ingredient.id === ing.ingredientId)?.id}`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ quantity: ing.quantity }),
-      })
-    );
-
-    const addPromises = ingredientsToAdd.map(ing =>
-      fetch('http://localhost:3000/recipe-ingredients', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          menuItemId: menuItemId,
-          ingredientId: ing.ingredientId,
-          quantity: ing.quantity,
-        }),
-      })
-    );
-
-    await Promise.all([...deletePromises, ...addPromises, ...updatePromises]);
   };
 
   const handleEditClick = (item: MenuItem) => {
     setEditingItem(item);
     setNewItem({
       name: item.name,
-      stock: String(item.stock ?? '0'),
-      minStock: String(item.minStock ?? '0'),
-      maxOrder: String(item.maxOrder ?? '0'),
-      cost: String(item.cost ?? '0'),
+      stock: item.stock,
+      minStock: item.minStock ?? 0,
+      maxOrder: item.maxOrder ?? 0,
+      cost: item.cost ?? 0,
       categoryId: String(item.category?.id ?? ''),
       iconName: item.iconName ?? 'Coffee',
     });
 
-    const existingRecipe = item.recipeIngredients.map(ri => ({
+    const existingRecipeInputs: RecipeInput[] = item.recipeIngredients.map((ri: RecipeIngredient) => ({
       ingredientId: ri.ingredient.id,
-      name: ri.ingredient.name,
       quantity: ri.quantity,
-      unit: ri.ingredient.unit,
     }));
 
-    setRecipeIngredients(existingRecipe);
+    setRecipeInputs(existingRecipeInputs);
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCancelEdit = () => {
     setEditingItem(null);
-    // Reset form to its initial state for creation
-    setNewItem({ name: '', stock: '0', minStock: '0', maxOrder: '0', categoryId: categories.length > 0 ? String(categories[0].id) : '', cost: '0', iconName: 'Coffee' });
-    setRecipeIngredients([]);
+    setNewItem({
+      name: '',
+      stock: 0,
+      minStock: 0,
+      maxOrder: 0,
+      categoryId: categories.length > 0 ? String(categories[0].id) : '',
+      cost: 0,
+      iconName: 'Coffee',
+    });
+    setRecipeInputs([]);
   };
 
-  const handleDeleteClick = async (itemId: number) => {
+  const handleDeleteClick = (itemId: number) => {
     setItemToDelete(itemId);
     setIsDeleteModalOpen(true);
   };
@@ -401,62 +143,23 @@ const ItemManagement: React.FC = () => {
   const confirmDelete = async () => {
     if (!itemToDelete) return;
 
-    setSubmitting(true);
+    setIsSubmitting(true);
     setError(null);
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No autenticado');
-
-      const response = await fetch(`http://localhost:3000/menu-items/${itemToDelete}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ isActive: false }),
-      });
-
-      if (!response.ok) throw new Error('Error al eliminar el ítem');
-      
-      // Volver a cargar los ítems para reflejar la eliminación
-      const itemsResponse = await fetch('http://localhost:3000/menu-items', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (!itemsResponse.ok) throw new Error('Error al recargar los ítems');
-      const updatedItemsData: MenuItem[] = await itemsResponse.json();
-      const activeItems = updatedItemsData.filter(item => item.isActive);
-      setItems(activeItems);
-
-      // Comprobar si la categoría seleccionada sigue existiendo
-      const categoryStillExists = activeItems.some(item => item.category?.name === selectedCategory);
+      await deleteItem(itemToDelete);
+      const updatedItems = items.filter(i => i.id !== itemToDelete);
+      const categoryStillExists = updatedItems.some(item => item.category?.name === selectedCategory);
       if (!categoryStillExists && categories.length > 0) {
-        // Si no, seleccionar la primera categoría que tenga items
-        const firstCategoryWithItems = categories.find(cat => activeItems.some(item => item.category?.id === cat.id));
+        const firstCategoryWithItems = categories.find(cat => updatedItems.some(item => item.category?.id === cat.id));
         setSelectedCategory(firstCategoryWithItems ? firstCategoryWithItems.name : null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocurrió un error al eliminar el ítem');
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
       setIsDeleteModalOpen(false);
       setItemToDelete(null);
     }
-  };
-
-  const handleAddRecipeIngredient = () => {
-    const ingredientId = parseInt(newRecipeIngredient.ingredientId, 10);
-    const quantity = parseFloat(newRecipeIngredient.quantity);
-    const selectedIngredient = systemIngredients.find(ing => ing.id === ingredientId);
-
-    if (selectedIngredient && !isNaN(quantity) && quantity > 0) {
-      setRecipeIngredients(prev => [...prev, {
-        ingredientId: selectedIngredient.id,
-        name: selectedIngredient.name,
-        quantity: quantity,
-        unit: selectedIngredient.unit,
-      }]);
-      setNewRecipeIngredient({ ingredientId: '', quantity: '1' });
-    }
-  };
-  const formatCategoryName = (name: string) => {
-    return name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   const filteredItems = useMemo(() => {
@@ -464,148 +167,27 @@ const ItemManagement: React.FC = () => {
     return items.filter(item => item.category?.name === selectedCategory);
   }, [items, selectedCategory]);
 
-  const displayedCategories = useMemo(() => {
-    const usedCategoryIds = new Set<number>();
-    items.forEach(item => {
-      if (item.category) {
-        usedCategoryIds.add(item.category.id);
-      }
-    });
-    return categories.filter(cat => usedCategoryIds.has(cat.id));
-  }, [items, categories]);
-
 
   return (
     <div className="card">
       <div className="card-body">
         {error && <div className="alert alert-danger" role="alert">{error}</div>}
         {/* --- Form Section --- */}
-        <div className="p-3 mb-4 border rounded">
-          <form onSubmit={handleSubmit}>
-            <div className="row g-3">
-              {/* Columna Izquierda */}
-              <div className="col-md-6">
-                <div className="mb-3">
-                  <label htmlFor="itemName" className="form-label">Nombre</label>
-                  <input type="text" className="form-control" id="itemName" name="name" value={newItem.name} onChange={handleInputChange} required />
-                </div>
-                <div className="row">
-                  <div className="col-sm-4 mb-3">
-                    <label htmlFor="itemStock" className="form-label">Stock</label>
-                    <input type="number" className="form-control" id="itemStock" name="stock" value={newItem.stock} onChange={handleInputChange} />
-                  </div>
-                  <div className="col-sm-4 mb-3">
-                    <label htmlFor="itemMinStock" className="form-label">Stock Mínimo</label>
-                    <input type="number" className="form-control" id="itemMinStock" name="minStock" value={newItem.minStock} onChange={handleInputChange} />
-                  </div>
-                  <div className="col-sm-4 mb-3">
-                    <label htmlFor="itemMaxOrder" className="form-label">Max. por Orden</label>
-                    <input type="number" className="form-control" id="itemMaxOrder" name="maxOrder" value={newItem.maxOrder} onChange={handleInputChange} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Columna Derecha */}
-              <div className="col-md-6">
-                <div className="mb-3">
-                  <label htmlFor="itemCategory" className="form-label">Categoría</label>
-                  <select id="itemCategory" name="categoryId" className="form-select" value={newItem.categoryId} onChange={handleInputChange} required>
-                    {categories.map(cat => <option key={cat.id} value={cat.id}>{formatCategoryName(cat.name)}</option>)}
-                  </select>
-                </div>
-                <div className="row">
-                  <div className="col-sm-6 mb-3">
-                    <label htmlFor="itemCost" className="form-label">Costo</label>
-                    <div className="input-group">
-                      <span className="input-group-text">$</span>
-                      <input type="number" step="0.01" className="form-control" id="itemCost" name="cost" value={newItem.cost} onChange={handleInputChange} />
-                    </div>
-                  </div>
-                  <div className="col-sm-6 mb-3">
-                    <label htmlFor="itemIcon" className="form-label">Ícono</label>
-                    <div className="input-group">
-                      <span className="input-group-text"><IconComponent iconName={newItem.iconName} /></span>
-                      <select id="itemIcon" name="iconName" className="form-select" value={newItem.iconName} onChange={handleInputChange}>
-                        {Object.keys(iconMap).map(iconName => (<option key={iconName} value={iconName}>{iconName}</option>))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Botones */}
-            <div className="d-flex justify-content-end mt-3">
-              {editingItem && (
-                <button type="button" className="btn btn-secondary me-2" onClick={handleCancelEdit}>
-                  Cancelar
-                </button>
-              )}
-              <button type="submit" className="btn btn-primary" disabled={submitting} style={{ minWidth: '120px' }}>
-                {submitting ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> : (editingItem ? 'Actualizar' : 'Agregar Ítem')}
-              </button>
-            </div>
-          </form>
-        </div>
+        <ItemForm
+          editingItem={editingItem}
+          categories={categories}
+          onSubmit={handleSubmit}
+          newItemState={newItem}
+          setNewItemState={setNewItem}
+        />
 
  {/* --- Recipe Section --- */}
-        <div className="p-3 mb-4 border rounded">
-          <h5 className="mb-3">Receta (Opcional)</h5>
-          
-          {useMemo(() => {
-            const selectedIngredient = systemIngredients.find(ing => ing.id === parseInt(newRecipeIngredient.ingredientId));
-            return (
-          <div className="row g-3 align-items-end mb-3">
-            <div className="col-md-6">
-              <label htmlFor="ingredientSelect" className="form-label">Ingrediente</label>
-              <select id="ingredientSelect" name="ingredientId" className="form-select" value={newRecipeIngredient.ingredientId} onChange={handleRecipeInputChange}>
-                <option value="" disabled>Seleccione un ingrediente...</option>
-                {systemIngredients.map(ing => (
-                  <option key={ing.id} value={ing.id}>{ing.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-4">
-              <label htmlFor="ingredientQuantity" className="form-label">Cantidad</label>
-              <div className="input-group">
-                <input type="number" id="ingredientQuantity" name="quantity" className="form-control" value={newRecipeIngredient.quantity} onChange={handleRecipeInputChange} />
-                {selectedIngredient && <span className="input-group-text">{selectedIngredient.unit}</span>}
-              </div>
-            </div>
-            <div className="col-md-2">
-              <button type="button" className="btn btn-success w-100" onClick={handleAddRecipeIngredient}>Agregar</button>
-            </div>
-          </div>
-            );
-          }, [systemIngredients, newRecipeIngredient, handleRecipeInputChange])}
-
-          {recipeIngredients.length > 0 && (
-            <table className="table table-sm">
-              <thead>
-                <tr>
-                  <th>Ingrediente</th>
-                  <th>Cantidad</th>
-                  <th>Unidad</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recipeIngredients.map((ing, index) => (
-                  <tr key={index}>
-                    <td>{ing.name}</td>
-                    <td>{ing.quantity}</td>
-                    <td>{ing.unit}</td>
-                    <td>
-                      <button className="btn btn-sm btn-outline-danger" style={{ border: 'none' }} onClick={() => setRecipeIngredients(prev => prev.filter((_, i) => i !== index))}>
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+        <RecipeEditor
+          editingItem={editingItem}
+          ingredients={systemIngredients}
+          recipeInputs={recipeInputs}
+          setRecipeInputs={setRecipeInputs}
+        />
 
         {/* --- List Section --- */}
         <div>
@@ -613,83 +195,31 @@ const ItemManagement: React.FC = () => {
           {loading ? (
             <div className="text-center"><div className="spinner-border spinner-border-sm" role="status"><span className="visually-hidden">Cargando...</span></div></div>
           ) : (
-            <ul className="nav nav-tabs mb-3">
-              {displayedCategories.map(cat => (
-                <li className="nav-item" key={cat.id}>
-                  <button
-                    className={`nav-link ${selectedCategory === cat.name ? 'active' : ''}`}
-                    onClick={() => setSelectedCategory(cat.name)}
-                  >
-                    {formatCategoryName(cat.name)}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <CategoryTabs
+              categories={categories}
+              items={items}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+            />
           )}
 
           {/* Items Table */}
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="table-light">
-                <tr>
-                  <th>Nombre</th>
-                  <th>Ícono</th>
-                  <th>Stock</th>
-                  <th>Stock Mínimo</th>
-                  <th>Max. por Orden</th>
-                  <th>Costo</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr><td colSpan={7} className="text-center"><div className="spinner-border" role="status"><span className="visually-hidden">Cargando...</span></div></td></tr>
-                ) : (
-                  filteredItems.map(item => (
-                    <tr key={item.id}>
-                      <td>{item.name}</td>
-                      <td>{item.iconName && <IconComponent iconName={item.iconName} />}</td>
-                      <td>{item.stock === null || item.stock === 0 ? 'No especificado' : item.stock}</td>
-                      <td>{item.minStock === null || item.minStock === 0 ? 'No especificado' : item.minStock}</td>
-                      <td>{item.maxOrder === null || item.maxOrder === 0 ? 'No especificado' : item.maxOrder}</td>
-                      <td>{item.cost === null || parseFloat(item.cost) === 0 ? 'No especificado' : `$${item.cost}`}</td>
-                      <td>
-                        <button className="btn btn-sm btn-outline-primary me-2" title="Editar" style={{ border: 'none' }} onClick={() => handleEditClick(item)}>
-                          <FilePenLine size={18} />
-                        </button>
-                        <button className="btn btn-sm btn-outline-danger" title="Eliminar" style={{ border: 'none' }} onClick={() => handleDeleteClick(item.id)}>
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <ItemList
+            items={filteredItems}
+            selectedCategory={selectedCategory}
+            onEdit={handleEditClick}
+            onDelete={handleDeleteClick}
+          />
         </div>
       </div>
 
       {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
-        <div className="modal show" tabIndex={-1} style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Confirmar Eliminación</h5>
-                <button type="button" className="btn-close" onClick={() => setIsDeleteModalOpen(false)} aria-label="Close"></button>
-              </div>
-              <div className="modal-body">
-                <p>¿Está seguro de que desea eliminar este ítem? Esta acción no se puede deshacer.</p>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setIsDeleteModalOpen(false)} disabled={submitting}>Cancelar</button>
-                <button type="button" className="btn btn-danger" onClick={confirmDelete} disabled={submitting}>{submitting ? 'Eliminando...' : 'Eliminar'}</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteModal
+        open={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        loading={isSubmitting}
+      />
     </div>
   );
 };
