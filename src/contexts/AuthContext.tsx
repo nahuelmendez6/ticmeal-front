@@ -30,6 +30,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   userProfile: User | null;
+  token: string | null;
   loginWithCredentials: (username: string, password: string) => Promise<boolean>;
   registerCompany: (data: RegisterData) => Promise<RegisterResult | null>;
   logout: () => void;
@@ -53,16 +54,21 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   // Load user from localStorage on mount
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const storedUserProfile = localStorage.getItem('userProfile');
+    const storedToken = localStorage.getItem('token');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
     if (storedUserProfile) {
       setUserProfile(JSON.parse(storedUserProfile));
+    }
+    if (storedToken) {
+      setToken(storedToken);
     }
   }, []);
 
@@ -87,6 +93,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // 2. Extracción Correcta de Datos del Payload 🔑
         // La respuesta del backend tiene la forma: { access_token: "...", payload: { ...datos_usuario } }
+        const accessToken = data.access_token || '';
         const payload = data.payload || {};
         
         // Store user data
@@ -102,13 +109,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // 3. Actualización de Estados y Almacenamiento
         setUser(userData);
         setUserProfile(userData);
+        setToken(accessToken);
         
         // Store in localStorage
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('userProfile', JSON.stringify(userData));
         
         // Usar 'data.access_token' que es el nombre exacto de la propiedad en la respuesta
-        localStorage.setItem('token', data.access_token || ''); 
+        localStorage.setItem('token', accessToken); 
 
         return true;
       } catch (error) {
@@ -143,6 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     setUser(null);
     setUserProfile(null);
+    setToken(null);
     localStorage.removeItem('user');
     localStorage.removeItem('userProfile');
     localStorage.removeItem('token');
@@ -151,6 +160,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     user,
     userProfile,
+    token,
     loginWithCredentials,
     registerCompany,
     logout,

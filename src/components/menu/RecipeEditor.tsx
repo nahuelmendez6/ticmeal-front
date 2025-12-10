@@ -1,24 +1,29 @@
 import React, { useState } from "react";
+import type { Ingredient } from "../../types/ingtredient";
+import type { RecipeInput } from "../../types/recipe";
 
 interface Props {
   editingItem: any | null;
-  ingredients: any[];
-  recipeIngredients?: any[];
-  setRecipeIngredients?: any;
+  ingredients: Ingredient[];
+  recipeState: [RecipeInput[], React.Dispatch<React.SetStateAction<RecipeInput[]>>];
 }
 
 const RecipeEditor: React.FC<Props> = ({
   ingredients,
-  recipeIngredients,
-  setRecipeIngredients
+  recipeState
 }) => {
+
+  const [recipeIngredients, setRecipeIngredients] = recipeState;
 
   const [newIng, setNewIng] = useState({
     ingredientId: "",
     quantity: "1"
   });
 
-  const handleIngChange = (e: any) => {
+  const selectedIngredient = ingredients.find(i => i.id === parseInt(newIng.ingredientId));
+  const unit = selectedIngredient?.unit;
+
+  const handleIngChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setNewIng(prev => ({ ...prev, [name]: value }));
   };
@@ -27,13 +32,11 @@ const RecipeEditor: React.FC<Props> = ({
     const ing = ingredients.find(i => i.id === parseInt(newIng.ingredientId));
     if (!ing) return;
 
-    setRecipeIngredients((prev: any[]) => [
+    setRecipeIngredients(prev => [
       ...prev,
       {
         ingredientId: ing.id,
-        name: ing.name,
-        quantity: parseFloat(newIng.quantity),
-        unit: ing.unit
+        quantity: parseFloat(newIng.quantity)
       }
     ]);
 
@@ -44,6 +47,7 @@ const RecipeEditor: React.FC<Props> = ({
     <div className="p-3 mb-4 border rounded">
       <h5 className="mb-3">Receta (Opcional)</h5>
 
+      {/* Selector */}
       <div className="row g-3 align-items-end mb-3">
         <div className="col-md-6">
           <label className="form-label">Ingrediente</label>
@@ -64,13 +68,16 @@ const RecipeEditor: React.FC<Props> = ({
 
         <div className="col-md-4">
           <label className="form-label">Cantidad</label>
-          <input
-            type="number"
-            name="quantity"
-            value={newIng.quantity}
-            className="form-control"
-            onChange={handleIngChange}
-          />
+          <div className="input-group">
+            <input
+              type="number"
+              name="quantity"
+              value={newIng.quantity}
+              className="form-control"
+              onChange={handleIngChange}
+            />
+            {unit && <span className="input-group-text">{unit}</span>}
+          </div>
         </div>
 
         <div className="col-md-2">
@@ -80,37 +87,38 @@ const RecipeEditor: React.FC<Props> = ({
         </div>
       </div>
 
-      {recipeIngredients?.length > 0 && (
+      {/* Tabla */}
+      {recipeIngredients.length > 0 && (
         <table className="table table-sm">
           <thead>
             <tr>
               <th>Ingrediente</th>
               <th>Cant.</th>
-              <th>Unidad</th>
               <th></th>
             </tr>
           </thead>
 
           <tbody>
-            {recipeIngredients.map((r, idx) => (
-              <tr key={idx}>
-                <td>{r.name}</td>
-                <td>{r.quantity}</td>
-                <td>{r.unit}</td>
-                <td>
-                  <button
-                    className="btn btn-sm btn-outline-danger"
-                    onClick={() =>
-                      setRecipeIngredients((prev: any[]) =>
-                        prev.filter((_, i) => i !== idx)
-                      )
-                    }
-                  >
-                    ✕
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {recipeIngredients.map((r, idx) => {
+              const ing = ingredients.find(i => i.id === r.ingredientId);
+
+              return (
+                <tr key={idx}>
+                  <td>{ing?.name ?? "?"}</td>
+                  <td>{r.quantity}</td>
+                  <td>
+                    <button
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={() =>
+                        setRecipeIngredients(prev => prev.filter((_, i) => i !== idx))
+                      }
+                    >
+                      ✕
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
 
         </table>

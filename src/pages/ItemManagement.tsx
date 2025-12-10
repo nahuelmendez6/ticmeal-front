@@ -185,8 +185,7 @@ const ItemManagement: React.FC = () => {
         <RecipeEditor
           editingItem={editingItem}
           ingredients={systemIngredients}
-          recipeInputs={recipeInputs}
-          setRecipeInputs={setRecipeInputs}
+          recipeState={[recipeInputs, setRecipeInputs]}
         />
 
         {/* --- List Section --- */}
@@ -197,7 +196,10 @@ const ItemManagement: React.FC = () => {
           ) : (
             <CategoryTabs
               categories={categories}
-              items={items}
+              items={items.map(item => ({
+                ...item,
+                category: item.category ?? undefined,
+              }))}
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}
             />
