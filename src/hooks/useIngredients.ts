@@ -56,6 +56,21 @@ export const useIngredients = () => {
     }
   };
 
+  const removeIngredient = async (id: number) => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      setError(null);
+      await ingredientService.remove(token, id);
+      // Recargamos los ingredientes para que el eliminado ya no aparezca
+      await loadIngredients();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     ingredients,
     editing,
@@ -63,5 +78,6 @@ export const useIngredients = () => {
     loading,
     error,
     saveIngredient,
+    removeIngredient,
   };
 };

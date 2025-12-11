@@ -70,17 +70,17 @@ interface Props {
 
 const ItemList: React.FC<Props> = ({ items, selectedCategory, onEdit, onDelete }) => {
   return (
-    <div className="table-responsive">
+    <div className="table-responsive" style={{ maxHeight: '350px', overflowY: 'auto' }}>
       <table className="table table-hover align-middle">
         <thead className="table-light">
           <tr>
-            <th>Nombre</th>
-            <th>Ícono</th>
-            <th>Stock</th>
-            <th>Mínimo</th>
-            <th>Max Orden</th>
-            <th>Costo</th>
-            <th></th>
+            <th style={{ position: 'sticky', top: 0, zIndex: 1 }}>Nombre</th>
+            <th style={{ position: 'sticky', top: 0, zIndex: 1 }}>Ícono</th>
+            <th style={{ position: 'sticky', top: 0, zIndex: 1 }}>Stock</th>
+            <th style={{ position: 'sticky', top: 0, zIndex: 1 }}>Mínimo</th>
+            <th style={{ position: 'sticky', top: 0, zIndex: 1 }}>Max Orden</th>
+            <th style={{ position: 'sticky', top: 0, zIndex: 1 }}>Costo</th>
+            <th style={{ position: 'sticky', top: 0, zIndex: 1 }}></th>
           </tr>
         </thead>
 

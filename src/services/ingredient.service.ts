@@ -13,6 +13,7 @@ export interface CreateIngredientDto {
 
 export interface SystemIngredient extends CreateIngredientDto {
   id: number;
+  isActive?: boolean;
 }
 
 
@@ -123,8 +124,25 @@ export const ingredientsService = {
     }
 
     return res.json();
+  },
+
+  async remove(token: string, id: number) {
+    const res = await fetch(`${BASE_URL}/ingredients/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ isActive: false }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("DELETE (soft) error:", errorText);
+      throw new Error("Error al eliminar ingrediente");
+    }
+
+    return res.json();
   }
-
-
 
 };

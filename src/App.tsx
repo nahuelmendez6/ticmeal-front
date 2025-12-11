@@ -11,6 +11,7 @@ import MenuManagementPage from './pages/MenuManagementPage';
 import ShiftManagement from './pages/ShiftManagement';
 import ActiveShiftForm from './components/ActiveShiftForm';
 import Verify from './pages/Verify';
+import StockReport from './components/StockReport';
 import './App.css';
 
 function App() {
@@ -56,6 +57,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>  
                   <MenuManagementPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <Layout>  
+                  <StockReport />
                 </Layout>
               </ProtectedRoute>
             }
