@@ -9,6 +9,8 @@ import UserManagement from './components/UserManagement'
 import Layout from './components/Layout';
 import MenuManagementPage from './pages/MenuManagementPage';
 import ShiftManagement from './pages/ShiftManagement';
+import TicketsTablePage from './pages/TicketsTablePage';
+import ReportsPage from './pages/ReportsPage';
 import ActiveShiftForm from './components/ActiveShiftForm';
 import Verify from './pages/Verify';
 import StockReport from './components/StockReport';
@@ -66,7 +68,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout>  
-                  <StockReport />
+                  <ReportsPage />
                 </Layout>
               </ProtectedRoute>
             }
@@ -90,6 +92,13 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <ShiftManagement />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/tickets-table" element={
+            <ProtectedRoute>
+              <Layout>
+                <TicketsTablePage />
               </Layout>
             </ProtectedRoute>
           } />

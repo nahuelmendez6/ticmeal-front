@@ -3,7 +3,8 @@ import { useStockReport } from '../hooks/useStockReport';
 
 const StockReport: React.FC = () => {
   const { movements, loading, error, startDate, setStartDate, endDate, setEndDate } = useStockReport();
-  const [filter, setFilter] = useState<'ALL' | 'MENU_ITEM' | 'INGREDIENT'>('ALL');
+  const [itemFilter, setItemFilter] = useState<'ALL' | 'MENU_ITEM' | 'INGREDIENT'>('ALL');
+  const [movementFilter, setMovementFilter] = useState<'ALL' | 'IN' | 'OUT'>('ALL');
 
   if (loading) {
     return (
@@ -24,10 +25,18 @@ const StockReport: React.FC = () => {
     );
   }
 
-  const filteredMovements = movements.filter((movement) => {
-    if (filter === 'MENU_ITEM') return movement.menuItem !== null;
-    if (filter === 'INGREDIENT') return movement.ingredient !== null;
-    return true;
+  const filteredMovements = movements.filter(movement => {
+    const itemTypeMatch =
+      itemFilter === 'ALL' ||
+      (itemFilter === 'MENU_ITEM' && movement.menuItem !== null) ||
+      (itemFilter === 'INGREDIENT' && movement.ingredient !== null);
+
+    const movementTypeMatch =
+      movementFilter === 'ALL' ||
+      (movementFilter === 'IN' && movement.movementType.toLowerCase() === 'in') ||
+      (movementFilter === 'OUT' && movement.movementType.toLowerCase() === 'out');
+
+    return itemTypeMatch && movementTypeMatch;
   });
 
   return (
@@ -60,28 +69,53 @@ const StockReport: React.FC = () => {
             </div>
           </div>
 
-          <div className="btn-group" role="group" aria-label="Filtro de reporte">
-            <button
-              type="button"
-              className={`btn ${filter === 'ALL' ? 'btn-primary' : 'btn-outline-primary'}`}
-              onClick={() => setFilter('ALL')}
-            >
-              Todos
-            </button>
-            <button
-              type="button"
-              className={`btn ${filter === 'MENU_ITEM' ? 'btn-primary' : 'btn-outline-primary'}`}
-              onClick={() => setFilter('MENU_ITEM')}
-            >
-              Items del Menú
-            </button>
-            <button
-              type="button"
-              className={`btn ${filter === 'INGREDIENT' ? 'btn-primary' : 'btn-outline-primary'}`}
-              onClick={() => setFilter('INGREDIENT')}
-            >
-              Ingredientes
-            </button>
+          <div className="d-flex flex-wrap gap-3">
+            <div className="btn-group btn-group-sm" role="group" aria-label="Filtro de tipo de item">
+              <button
+                type="button"
+                className={`btn ${itemFilter === 'ALL' ? 'btn-primary' : 'btn-outline-primary'}`}
+                onClick={() => setItemFilter('ALL')}
+              >
+                Todos los Items
+              </button>
+              <button
+                type="button"
+                className={`btn ${itemFilter === 'MENU_ITEM' ? 'btn-primary' : 'btn-outline-primary'}`}
+                onClick={() => setItemFilter('MENU_ITEM')}
+              >
+                Items del Menú
+              </button>
+              <button
+                type="button"
+                className={`btn ${itemFilter === 'INGREDIENT' ? 'btn-primary' : 'btn-outline-primary'}`}
+                onClick={() => setItemFilter('INGREDIENT')}
+              >
+                Ingredientes
+              </button>
+            </div>
+            <div className="btn-group btn-group-sm" role="group" aria-label="Filtro de tipo de movimiento">
+              <button
+                type="button"
+                className={`btn ${movementFilter === 'ALL' ? 'btn-primary' : 'btn-outline-primary'}`}
+                onClick={() => setMovementFilter('ALL')}
+              >
+                Todos los Movimientos
+              </button>
+              <button
+                type="button"
+                className={`btn ${movementFilter === 'IN' ? 'btn-primary' : 'btn-outline-primary'}`}
+                onClick={() => setMovementFilter('IN')}
+              >
+                Entradas
+              </button>
+              <button
+                type="button"
+                className={`btn ${movementFilter === 'OUT' ? 'btn-primary' : 'btn-outline-primary'}`}
+                onClick={() => setMovementFilter('OUT')}
+              >
+                Salidas
+              </button>
+            </div>
           </div>
         </div>
       </div>

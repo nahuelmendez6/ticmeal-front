@@ -64,12 +64,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             Turnos
           </Link>
         </li>,
-        <li key="tickets-table" className={isActive('/tickets-table') ? 'active' : ''}>
-          <Link to="/tickets-table" className="d-flex align-items-center p-3 text-white">
-            <i className="bi bi-table me-2"></i>
-            Tabla de Tickets
-          </Link>
-        </li>,
         <li key="menu" className={isActive('/menu-management') ? 'active' : ''}>
           <Link to="/menu-management" className="d-flex align-items-center p-3 text-white">
             <i className="bi bi-journal-text me-2"></i>
