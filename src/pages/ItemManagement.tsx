@@ -69,29 +69,50 @@ const ItemManagement: React.FC = () => {
     fetchInitialData();
   }, [fetchItems, token]);
 
+  useEffect(() => {
+    // Si estamos cargando o no hay una categoría seleccionada, no hacemos nada.
+    if (loading || !selectedCategory) return;
+
+    // Verificamos si la categoría actual todavía tiene ítems.
+    const categoryHasItems = items.some(item => item.category?.name === selectedCategory);
+
+    if (!categoryHasItems) {
+      // Si no tiene, buscamos la primera categoría que sí tenga ítems y la seleccionamos.
+      const nextCategoryWithItems = categories.find(cat => items.some(item => item.category?.id === cat.id));
+      setSelectedCategory(nextCategoryWithItems ? nextCategoryWithItems.name : null);
+    }
+  }, [items, categories, selectedCategory, loading]);
+
   const handleSubmit = async (formData: typeof newItem, recipeData: RecipeInput[]) => {
     setIsSubmitting(true);
     setError(null);
 
-    // Preparamos el payload que coincide con el DTO del backend
-    const payload = {
+    // 1. Preparar el payload solo con los datos del ítem, sin la receta.
+    const itemPayload = {
       ...formData,
-      // Convertimos categoryId a número o lo dejamos undefined si no hay
       categoryId: formData.categoryId ? parseInt(formData.categoryId, 10) : undefined,
-      // Incluimos la receta en el mismo payload
-      recipeIngredients: recipeData,
     };
 
     try {
       if (editingItem) {
-        // Enviamos el payload unificado para actualizar
-        await updateItem(editingItem.id, payload);
+        // A. Si estamos editando:
+        // Primero, actualizamos el ítem del menú.
+        await updateItem(editingItem.id, itemPayload);
+        // Segundo, sincronizamos la receta usando el hook useRecipes.
+        await syncRecipe(editingItem, recipeData);
       } else {
-        // Enviamos el payload unificado para crear
-        await createItem(payload);
+        // B. Si estamos creando:
+        // Primero, creamos el ítem y obtenemos el objeto guardado con su nuevo ID.
+        const savedItem = await createItem(itemPayload);
+        // Segundo, si se creó bien y hay una receta, la sincronizamos.
+        if (savedItem && savedItem.id && recipeData.length > 0) {
+          const itemForRecipeSync = { id: savedItem.id, recipeIngredients: [] };
+          await syncRecipe(itemForRecipeSync, recipeData);
+        }
       }
 
       handleCancelEdit();
+      await fetchItems(); // Recargamos los ítems para ver los cambios.
     } catch (err) {
       setError(err instanceof Error ? err.message : `Ocurrió un error al ${editingItem ? 'actualizar' : 'crear'} el ítem`);
     } finally {
@@ -147,12 +168,7 @@ const ItemManagement: React.FC = () => {
     setError(null);
     try {
       await deleteItem(itemToDelete);
-      const updatedItems = items.filter(i => i.id !== itemToDelete);
-      const categoryStillExists = updatedItems.some(item => item.category?.name === selectedCategory);
-      if (!categoryStillExists && categories.length > 0) {
-        const firstCategoryWithItems = categories.find(cat => updatedItems.some(item => item.category?.id === cat.id));
-        setSelectedCategory(firstCategoryWithItems ? firstCategoryWithItems.name : null);
-      }
+      await fetchItems(); // Volvemos a cargar los ítems para reflejar la eliminación.
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocurrió un error al eliminar el ítem');
     } finally {
@@ -179,6 +195,7 @@ const ItemManagement: React.FC = () => {
           onSubmit={handleSubmit}
           newItemState={newItem}
           setNewItemState={setNewItem}
+          recipeIngredients={recipeInputs}
         />
 
  {/* --- Recipe Section --- */}

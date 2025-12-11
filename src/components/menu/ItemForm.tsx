@@ -41,6 +41,7 @@ interface Props {
   editingItem: any | null;
   categories: any[];
   onSubmit: (formData: any, recipeIngredients: any[]) => void;
+  recipeIngredients: any[];
   newItemState?: any;
   setNewItemState?: any;
 }
@@ -49,6 +50,7 @@ const ItemForm: React.FC<Props> = ({
   editingItem,
   categories,
   onSubmit,
+  recipeIngredients,
   newItemState,
   setNewItemState,
 }) => {
@@ -69,7 +71,7 @@ const ItemForm: React.FC<Props> = ({
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(newItem, []);
+    onSubmit(newItem, recipeIngredients);
   };
 
   return (

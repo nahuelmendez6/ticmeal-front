@@ -90,7 +90,7 @@ type CategoryBehavior =
  * - Si no, es 'unlimited'.
  */
 const getCategoryBehavior = (categoryName: string, menuItems: MenuItem[]): CategoryBehavior => {
-  const itemsInCategory = menuItems.filter(item => item.category.name === categoryName);
+  const itemsInCategory = menuItems.filter(item => item.category && item.category.name === categoryName);
   if (itemsInCategory.length === 0) return { type: 'unlimited' };
 
   const allHaveMaxOrderOne = itemsInCategory.every(item => item.maxOrder === 1);
@@ -111,21 +111,27 @@ const getCategoryBehavior = (categoryName: string, menuItems: MenuItem[]): Categ
 };
 
 const isItemButtonDisabled = (item: MenuItem, selectedItems: Map<number, number>, allItems: MenuItem[]): boolean => {
-  const behavior = getCategoryBehavior(item.category.name, allItems);
   const currentSelection = selectedItems.get(item.id) || 0;
 
   if (item.maxOrder !== null && currentSelection >= item.maxOrder) return true;
 
+  // If the item has no category, no category-based rules apply.
+  if (!item.category) {
+    return false;
+  }
+
+  const behavior = getCategoryBehavior(item.category.name, allItems);
+
   if (behavior.type === 'exclusive') {
     for (const [selectedId] of selectedItems.entries()) {
       const existingItem = allItems.find(i => i.id === selectedId);
-      if (existingItem && existingItem.category.name === item.category.name) {
+      if (existingItem?.category?.name === item.category.name) {
         return true; // Ya hay un item de esta categoría exclusiva seleccionado
       }
     }
   } else if (behavior.type === 'quantity') {
     const currentCategoryQuantity = Array.from(selectedItems.entries())
-      .filter(([id]) => allItems.find(i => i.id === id)?.category.name === item.category.name)
+      .filter(([id]) => allItems.find(i => i.id === id)?.category?.name === item.category.name)
       .reduce((sum, [, qty]) => sum + qty, 0);
     if (currentCategoryQuantity >= behavior.limit) return true;
   }

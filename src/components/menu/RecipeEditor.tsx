@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { Ingredient } from "../../types/ingtredient";
 import type { RecipeInput } from "../../types/recipe";
 
@@ -9,6 +9,7 @@ interface Props {
 }
 
 const RecipeEditor: React.FC<Props> = ({
+  editingItem,
   ingredients,
   recipeState
 }) => {
@@ -22,6 +23,17 @@ const RecipeEditor: React.FC<Props> = ({
 
   const selectedIngredient = ingredients.find(i => i.id === parseInt(newIng.ingredientId));
   const unit = selectedIngredient?.unit;
+
+  useEffect(() => {
+    if (editingItem?.recipeIngredients) {
+      setRecipeIngredients(editingItem.recipeIngredients.map((r: any) => ({
+        ingredientId: r.ingredient.id,
+        quantity: r.quantity
+      })));
+    } else {
+      setRecipeIngredients([]);
+    }
+  }, [editingItem, setRecipeIngredients]);
 
   const handleIngChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -99,18 +111,20 @@ const RecipeEditor: React.FC<Props> = ({
           </thead>
 
           <tbody>
-            {recipeIngredients.map((r, idx) => {
+            {recipeIngredients.map((r) => {
               const ing = ingredients.find(i => i.id === r.ingredientId);
 
               return (
-                <tr key={idx}>
+                <tr key={r.ingredientId}>
                   <td>{ing?.name ?? "?"}</td>
                   <td>{r.quantity}</td>
                   <td>
                     <button
                       className="btn btn-sm btn-outline-danger"
                       onClick={() =>
-                        setRecipeIngredients(prev => prev.filter((_, i) => i !== idx))
+                        setRecipeIngredients(prev =>
+                          prev.filter(item => item.ingredientId !== r.ingredientId)
+                        )
                       }
                     >
                       ✕
