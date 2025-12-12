@@ -40,7 +40,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // 🔑 CORRECCIÓN CLAVE: Verificar el rol usando la propiedad 'role'
   // El rol viene como una cadena de texto (ej: "company_admin").
   const isAdmin = userProfile?.role === 'company_admin';
-  const isKitchen = userProfile?.role === 'cocina'; // Asumiendo 'cocina' es el rol
+  const isKitchen = userProfile?.role === 'kitchen_admin';
   const isEmployee = !!userProfile?.role; // Asumimos que si hay un rol, es un empleado base
 
   // console.log('User Profile:', userProfile); // Puedes mantener este log para debug
@@ -86,6 +86,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <Link to="/ticket-list" className="d-flex align-items-center p-3 text-white">
             <i className="bi bi-list-ul me-2"></i>
             Lista de Tickets
+          </Link>
+        </li>
+      );
+      menuItems.push(
+        <li key="ticket-monitor" className={isActive('/ticket-monitor') ? 'active' : ''}>
+          <Link to="/ticket-monitor" className="d-flex align-items-center p-3 text-white">
+            <i className="bi bi-tv me-2"></i>
+            Monitor de Cocina
           </Link>
         </li>
       );

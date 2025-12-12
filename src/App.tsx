@@ -14,6 +14,7 @@ import ReportsPage from './pages/ReportsPage';
 import ActiveShiftForm from './components/ActiveShiftForm';
 import Verify from './pages/Verify';
 import StockReport from './components/StockReport';
+import TicketMonitor from './components/TicketMonitor';
 import './App.css';
 
 function App() {
@@ -99,6 +100,13 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <TicketsTablePage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/ticket-monitor" element={
+            <ProtectedRoute>
+              <Layout>
+                <TicketMonitor />
               </Layout>
             </ProtectedRoute>
           } />
