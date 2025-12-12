@@ -51,11 +51,12 @@ const MenuItemIcon: React.FC<{ iconName: string }> = ({ iconName }) => {
 
 const SOCKET_URL = 'http://localhost:3000/tickets';
 
-const TicketCard: React.FC<{ ticket: Ticket }> = ({ ticket }) => {
+const TicketCard: React.FC<{ ticket: Ticket; onMarkAsUsed: (id: number) => void; isUpdating: boolean }> = ({ ticket, onMarkAsUsed, isUpdating }) => {
   const getStatusBadge = (status: string) => {
     const badgeMap: { [key: string]: { text: string; className: string } } = {
       pending: { text: 'Pendiente', className: 'bg-warning text-dark' },
       approved: { text: 'Aprobado', className: 'bg-success' },
+      used: { text: 'Usado', className: 'bg-primary' },
       rejected: { text: 'Rechazado', className: 'bg-danger' },
       delivered: { text: 'Entregado', className: 'bg-info' },
       cancelled: { text: 'Cancelado', className: 'bg-secondary' },
@@ -87,8 +88,23 @@ const TicketCard: React.FC<{ ticket: Ticket }> = ({ ticket }) => {
     return acc;
   }, new Map<number, { name: string; quantity: number; iconName: string }>());
 
+  const isClickable = ticket.status !== 'used' && ticket.status !== 'cancelled' && ticket.status !== 'rejected';
+
   return (
-    <div className="card shadow-lg h-100">
+    // Se recomienda añadir estilos para .ticket-clickable:hover para dar feedback visual, por ejemplo:
+    // .ticket-clickable:hover { transform: translateY(-5px); box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important; }
+    <div 
+      className={`card shadow-lg h-100 ${isClickable ? 'ticket-clickable' : ''}`}
+      onClick={() => isClickable && !isUpdating && onMarkAsUsed(ticket.id)}
+      style={{ cursor: isClickable && !isUpdating ? 'pointer' : 'default', position: 'relative' }}
+    >
+      {isUpdating && (
+        <div className="card-img-overlay d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(255, 255, 255, 0.7)', zIndex: 10 }}>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Actualizando...</span>
+          </div>
+        </div>
+      )}
       <div className="card-body p-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
             <h3 className="fw-bold mb-0 text-primary">
@@ -129,6 +145,7 @@ const TicketCard: React.FC<{ ticket: Ticket }> = ({ ticket }) => {
 
 export const TicketMonitor: React.FC = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [updatingTicketId, setUpdatingTicketId] = useState<number | null>(null);
 
   useEffect(() => {
     const socket = io(SOCKET_URL);
@@ -156,6 +173,32 @@ export const TicketMonitor: React.FC = () => {
     };
   }, []);
 
+  const handleMarkAsUsed = async (ticketId: number) => {
+    if (updatingTicketId) return; // Prevenir múltiples actualizaciones
+    setUpdatingTicketId(ticketId);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:3000/tickets/${ticketId}/use`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al marcar el ticket como usado.');
+      }
+      // El backend emitirá un evento 'ticketUpdated', que será capturado por el listener del socket.
+    } catch (error) {
+      console.error('Error marking ticket as used:', error);
+      alert(error instanceof Error ? error.message : 'Ocurrió un error.');
+    } finally {
+      setUpdatingTicketId(null);
+    }
+  };
+
   return (
     <div className="container py-5">
       <h2 className="text-center mb-5">Monitor de Cocina - Tickets en Tiempo Real</h2>
@@ -169,7 +212,11 @@ export const TicketMonitor: React.FC = () => {
         ) : (
             tickets.map((ticket) => (
                 <div key={ticket.id} className="col-12 col-md-6 col-lg-4">
-                    <TicketCard ticket={ticket} />
+                    <TicketCard 
+                      ticket={ticket} 
+                      onMarkAsUsed={handleMarkAsUsed}
+                      isUpdating={updatingTicketId === ticket.id}
+                    />
                 </div>
             ))
         )}

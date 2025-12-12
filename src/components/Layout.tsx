@@ -87,7 +87,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <i className="bi bi-list-ul me-2"></i>
             Lista de Tickets
           </Link>
-        </li>
+        </li>,
+                <li key="shifts" className={isActive('/shifts') ? 'active' : ''}>
+          <Link to="/shifts" className="d-flex align-items-center p-3 text-white">
+            <i className="bi bi-clock-history me-2"></i>
+            Turnos
+          </Link>
+        </li>,
+        <li key="menu" className={isActive('/menu-management') ? 'active' : ''}>
+          <Link to="/menu-management" className="d-flex align-items-center p-3 text-white">
+            <i className="bi bi-journal-text me-2"></i>
+            Menú
+          </Link>
+        </li>,
       );
       menuItems.push(
         <li key="ticket-monitor" className={isActive('/ticket-monitor') ? 'active' : ''}>
