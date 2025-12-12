@@ -304,7 +304,34 @@ const ActiveShiftForm: React.FC = () => {
   }
 
   // --- Componente para Mostrar el Ticket ---
-const TicketView: React.FC<{ ticket: Ticket; onNewOrder: () => void, allMenuItems: MenuItem[] }> = ({ ticket, onNewOrder, allMenuItems }) => {
+const TicketView: React.FC<{ ticket: Ticket; onNewOrder: () => void, allMenuItems: MenuItem[], onUpdateTicket: (t: Ticket) => void }> = ({ ticket, onNewOrder, allMenuItems, onUpdateTicket }) => {
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const handleAction = async (action: 'pause' | 'cancel') => {
+    setActionLoading(action);
+    try {
+      const response = await fetch(`http://localhost:3000/tickets/${ticket.id}/${action}`, {
+        method: 'PATCH',
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error: ${response.status}`);
+      }
+
+      const updatedTicket: Ticket = await response.json();
+      onUpdateTicket(updatedTicket);
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'No se pudo actualizar el ticket.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const badgeMap: { [key: string]: { text: string; className: string } } = {
       pending: { text: 'Pendiente', className: 'bg-warning text-dark' },
@@ -382,7 +409,26 @@ const TicketView: React.FC<{ ticket: Ticket; onNewOrder: () => void, allMenuItem
                 </div>
               )}
 
-              <button className="btn btn-outline-primary mt-4 w-100" onClick={onNewOrder}>
+              <div className="d-flex gap-2 mt-4">
+                <button 
+                  className="btn btn-warning flex-grow-1"
+                  onClick={() => handleAction('pause')}
+                  disabled={!!actionLoading || ['cancelled', 'delivered', 'rejected'].includes(ticket.status)}
+                >
+                  {actionLoading === 'pause' ? <span className="spinner-border spinner-border-sm me-2"/> : <i className="bi bi-pause-circle me-2"></i>}
+                  Pausar
+                </button>
+                <button 
+                  className="btn btn-danger flex-grow-1"
+                  onClick={() => handleAction('cancel')}
+                  disabled={!!actionLoading || ['cancelled', 'delivered', 'rejected'].includes(ticket.status)}
+                >
+                  {actionLoading === 'cancel' ? <span className="spinner-border spinner-border-sm me-2"/> : <i className="bi bi-x-circle me-2"></i>}
+                  Cancelar
+                </button>
+              </div>
+
+              <button className="btn btn-outline-primary mt-3 w-100" onClick={onNewOrder}>
                 <i className="bi bi-plus-circle me-2"></i>
                 Generar Nuevo Ticket
               </button>
@@ -396,7 +442,7 @@ const TicketView: React.FC<{ ticket: Ticket; onNewOrder: () => void, allMenuItem
 
   // --- Renderizado del Ticket Creado ---
   if (createdTicket) {
-    return <TicketView ticket={createdTicket} allMenuItems={shift?.menuItems || []} onNewOrder={() => {
+    return <TicketView ticket={createdTicket} allMenuItems={shift?.menuItems || []} onUpdateTicket={setCreatedTicket} onNewOrder={() => {
       setCreatedTicket(null);
       setSelectedItems(new Map());
       setPin('');
