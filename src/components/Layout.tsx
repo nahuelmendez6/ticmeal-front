@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { io } from 'socket.io-client';
+import { Bell } from 'lucide-react';
 
 import logonavbar from '../assets/react.svg'; // Placeholder, replace with actual logo
 
@@ -8,8 +10,30 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+// Se añade la interfaz Ticket aquí para que esté disponible para los eventos de socket
+interface Ticket {
+  id: number;
+  status: string;
+  date: string;
+  time: string;
+  user: {
+    id: number;
+    firstName: string;
+    lastName: string;
+  };
+  shift: {
+    id: number;
+    name: string;
+  };
+  menuItems: { id: number; name: string }[];
+  observations: { id: number; description: string }[];
+  createdAt: string;
+}
+
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
   const { user, userProfile, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -28,6 +52,75 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Conexión a Socket.IO para notificaciones
+  useEffect(() => {
+    // Intentar obtener companyId de propiedades directas o anidadas (común en TypeORM)
+    let companyId = (userProfile as any)?.companyId || (userProfile as any)?.company?.id;
+    
+    // Fallback: Si no está en el perfil, intentar decodificarlo del token JWT almacenado
+    if (!companyId) {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const base64Url = token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+          const payload = JSON.parse(jsonPayload);
+          companyId = payload.companyId;
+        } catch (e) {
+          console.error('[Layout] Error decodificando token para obtener companyId:', e);
+        }
+      }
+    }
+
+    console.log('[Layout] Verificando conexión socket. Profile:', userProfile, 'CompanyId:', companyId);
+
+    if (!companyId) return;
+
+    const socketUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    // Aseguramos que no haya doble barra si la URL base termina en /
+    const cleanUrl = socketUrl.replace(/\/$/, '');
+    
+    // Conectamos al namespace '/tickets' definido en el Gateway
+    const socket = io(`${cleanUrl}/tickets`, {
+      query: {
+        companyId: companyId // Se envía para que el backend nos una a la sala 'company_X'
+      },
+      transports: ['websocket']
+    });
+
+    socket.on('connect', () => {
+      console.log('[Layout] Socket conectado correctamente. ID:', socket.id, 'Sala:', `company_${companyId}`);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('[Layout] Error de conexión al socket de tickets:', err);
+    });
+
+    socket.on('lowStockAlert', (payload) => {
+      // console.warn('⚠️ Alerta de Stock:', payload);
+      setNotifications((prev) => [payload, ...prev]);
+    });
+
+    // --- UNIFICACIÓN DE EVENTOS DE TICKETS ---
+    // Escuchar nuevos tickets y emitir un evento global para que otros componentes (como TicketMonitor) reaccionen
+    socket.on('newTicket', (ticket: Ticket) => {
+      console.log('[Layout] Nuevo ticket recibido via socket:', ticket);
+      window.dispatchEvent(new CustomEvent('newTicket', { detail: ticket }));
+    });
+
+    socket.on('ticketUpdated', (updatedTicket: Ticket) => {
+      console.log('[Layout] Ticket actualizado via socket:', updatedTicket);
+      window.dispatchEvent(new CustomEvent('ticketUpdated', { detail: updatedTicket }));
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [userProfile]);
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -159,6 +252,60 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <i className="bi bi-list"></i>
             </button>
             <div className="ms-auto d-flex align-items-center">
+              
+              {/* Notificaciones */}
+              <div className="dropdown me-3 position-relative">
+                <button 
+                  className="btn btn-light position-relative border-0 bg-transparent" 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  type="button"
+                >
+                  <Bell size={20} className="text-secondary" />
+                  {notifications.length > 0 && (
+                    <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '0.6rem' }}>
+                      {notifications.length}
+                    </span>
+                  )}
+                </button>
+                
+                {showNotifications && (
+                  <div className="dropdown-menu show p-0 shadow border-0 end-0" style={{ position: 'absolute', width: '300px', right: 0, left: 'auto', zIndex: 1000 }}>
+                    <div className="card border-0">
+                      <div className="card-header bg-white d-flex justify-content-between align-items-center py-2">
+                        <h6 className="mb-0 small fw-bold">Notificaciones</h6>
+                        {notifications.length > 0 && (
+                          <button className="btn btn-link btn-sm p-0 text-decoration-none" style={{ fontSize: '0.8rem' }} onClick={() => setNotifications([])}>
+                            Limpiar
+                          </button>
+                        )}
+                      </div>
+                      <div className="list-group list-group-flush" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                        {notifications.length === 0 ? (
+                          <div className="p-3 text-center text-muted small">
+                            No hay notificaciones nuevas
+                          </div>
+                        ) : (
+                          notifications.map((notif, idx) => (
+                            <div key={idx} className="list-group-item list-group-item-action p-2">
+                              <div className="d-flex w-100 justify-content-between align-items-center mb-1">
+                                <strong className="text-danger small">Stock Bajo</strong>
+                                <small className="text-muted" style={{ fontSize: '0.7rem' }}>Ahora</small>
+                              </div>
+                              <p className="mb-1 small text-dark">
+                                {notif.name}: {notif.currentStock} {notif.unit}
+                              </p>
+                              <small className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                Mínimo requerido: {notif.minStock} {notif.unit}
+                              </small>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <span className="me-3 text-dark">
                 <i className="bi bi-person-circle me-2"></i>
                 {/* Asumimos que userProfile.username siempre está presente después del login */}

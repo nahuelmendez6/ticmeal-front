@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
 import {
   Coffee, Apple, Pizza, Beef, Salad, Soup, Utensils, Wine,
   Banana, Cookie, Croissant, CupSoda, CakeSlice, Beer, Donut, EggFried,
@@ -48,8 +47,6 @@ const MenuItemIcon: React.FC<{ iconName: string }> = ({ iconName }) => {
   const Icon = iconMap[iconName] || AlertTriangle;
   return <Icon size={40} />;
 };
-
-const SOCKET_URL = 'http://localhost:3000/tickets';
 
 const TicketCard: React.FC<{ ticket: Ticket; onMarkAsUsed: (id: number) => void; isUpdating: boolean }> = ({ ticket, onMarkAsUsed, isUpdating }) => {
   const getStatusBadge = (status: string) => {
@@ -147,29 +144,54 @@ export const TicketMonitor: React.FC = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [updatingTicketId, setUpdatingTicketId] = useState<number | null>(null);
 
+  // --- Lógica de Sockets Unificada ---
+  // Ya no se conecta directamente. Escucha eventos globales que son emitidos por Layout.tsx
   useEffect(() => {
-    const socket = io(SOCKET_URL);
+    // Cargar tickets iniciales (pendientes y aprobados) para el monitor
+    const fetchInitialTickets = async () => {
+      try {
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const token = localStorage.getItem("token");
+        // Asumimos un endpoint que devuelve solo los tickets activos para el monitor
+        const response = await fetch(`${baseUrl}/tickets/monitor`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const initialTickets = await response.json();
+          setTickets(initialTickets.sort((a: Ticket, b: Ticket) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        }
+      } catch (error) {
+        console.error("Error al cargar tickets iniciales para el monitor:", error);
+      }
+    };
 
-    socket.on('connect', () => {
-      console.log('Conectado al servidor de Tickets:', socket.id);
-    });
+    fetchInitialTickets();
 
-    socket.on('newTicket', (newTicket: Ticket) => {
-      console.log('Nuevo ticket recibido:', newTicket);
-      setTickets((prevTickets) => [newTicket, ...prevTickets]);
-    });
+    const handleNewTicket = (event: Event) => {
+      const newTicket = (event as CustomEvent).detail;
+      console.log('[Monitor] Nuevo ticket recibido del evento global:', newTicket);
+      setTickets((prev) => [newTicket, ...prev].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    };
 
-    socket.on('ticketUpdated', (updatedTicket: Ticket) => {
-      console.log('Ticket actualizado:', updatedTicket);
-      setTickets((prevTickets) =>
-        prevTickets.map((ticket) =>
-          ticket.id === updatedTicket.id ? updatedTicket : ticket
-        )
-      );
-    });
+    const handleTicketUpdate = (event: Event) => {
+      const updatedTicket = (event as CustomEvent).detail;
+      console.log('[Monitor] Ticket actualizado del evento global:', updatedTicket);
+      
+      // Si el ticket ya no es relevante para la cocina (usado, cancelado), lo eliminamos de la vista
+      if (!['pending', 'approved'].includes(updatedTicket.status)) {
+        setTickets(prev => prev.filter(t => t.id !== updatedTicket.id));
+      } else {
+        // Si no, actualizamos su estado
+        setTickets(prev => prev.map(t => t.id === updatedTicket.id ? updatedTicket : t));
+      }
+    };
+
+    window.addEventListener('newTicket', handleNewTicket);
+    window.addEventListener('ticketUpdated', handleTicketUpdate);
 
     return () => {
-      socket.disconnect();
+      window.removeEventListener('newTicket', handleNewTicket);
+      window.removeEventListener('ticketUpdated', handleTicketUpdate);
     };
   }, []);
 
@@ -177,8 +199,9 @@ export const TicketMonitor: React.FC = () => {
     if (updatingTicketId) return; // Prevenir múltiples actualizaciones
     setUpdatingTicketId(ticketId);
     try {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:3000/tickets/${ticketId}/use`, {
+      const response = await fetch(`${baseUrl}/tickets/${ticketId}/use`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
