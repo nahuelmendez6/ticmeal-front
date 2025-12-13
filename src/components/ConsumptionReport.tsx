@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useConsumptionReports } from '../hooks/useConsumptionReports';
+import { useConsumptionTrend } from '../hooks/useConsumptionTrend';
+import ConsumptionTrendChart from './ConsumptionTrendChart';
 
 const ConsumptionReport: React.FC = () => {
   const today = new Date().toISOString().split('T')[0];
@@ -14,11 +16,17 @@ const ConsumptionReport: React.FC = () => {
     error,
   } = useConsumptionReports(startDate, endDate, limit);
 
-  if (error) {
+  const {
+    trendData,
+    loading: loadingTrend,
+    error: errorTrend
+  } = useConsumptionTrend(startDate, endDate);
+
+  if (error || errorTrend) {
     return (
       <div className="alert alert-danger m-3" role="alert">
         <i className="bi bi-exclamation-triangle-fill me-2"></i>
-        Error al cargar los reportes de consumo: {error}
+        Error al cargar los reportes de consumo: {error || errorTrend}
       </div>
     );
   }
@@ -62,7 +70,7 @@ const ConsumptionReport: React.FC = () => {
         </div>
       </div>
 
-      {loading && (
+      {(loading || loadingTrend) && (
         <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '300px' }}>
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Cargando reportes...</span>
@@ -70,14 +78,14 @@ const ConsumptionReport: React.FC = () => {
         </div>
       )}
 
-      {!loading && !error && (
+      {!loading && !loadingTrend && !error && !errorTrend && (
         <div className="row g-4">
           {/* Most Consumed Items */}
-          <div className="col-12">
+          <div className="col-12 col-lg-6">
             <div className="card shadow-sm h-100">
               <div className="card-body">
                 <h5 className="card-title">Ítems más Consumidos</h5>
-                {mostConsumed.length > 0 ? (
+                {mostConsumed && mostConsumed.length > 0 ? (
                   <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={mostConsumed} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -89,6 +97,16 @@ const ConsumptionReport: React.FC = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 ) : <p className="text-muted text-center mt-4">No hay datos para el período seleccionado.</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Consumption Trend Chart */}
+          <div className="col-12 col-lg-6">
+            <div className="card shadow-sm h-100">
+              <div className="card-body">
+                <h5 className="card-title">Tendencia de Consumo</h5>
+                <ConsumptionTrendChart data={trendData} />
               </div>
             </div>
           </div>
