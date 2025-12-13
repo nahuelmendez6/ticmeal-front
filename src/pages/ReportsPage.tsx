@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import StockReport from '../components/StockReport';
 import TicketsTable from '../components/TicketsTable';
 import ConsumptionReport from '../components/ConsumptionReport';
+import CostsReport from '../components/CostsReport';
 
 const ReportsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('consumption');
@@ -14,6 +15,8 @@ const ReportsPage: React.FC = () => {
         return <StockReport />;
       case 'tickets':
         return <TicketsTable />;
+      case 'costs':
+        return <CostsReport />;
       default:
         return <ConsumptionReport />;
     }
@@ -49,6 +52,15 @@ const ReportsPage: React.FC = () => {
           >
             <i className="bi bi-table me-2"></i>
             Tickets Emitidos
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            className={`nav-link ${activeTab === 'costs' ? 'active' : ''}`}
+            onClick={() => setActiveTab('costs')}
+          >
+            <i className="bi bi-currency-dollar me-2"></i>
+            Costos
           </button>
         </li>
       </ul>
