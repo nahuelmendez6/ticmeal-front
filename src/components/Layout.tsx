@@ -193,6 +193,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             Menú
           </Link>
         </li>,
+        <li key="kitchen-ticket-create" className={isActive('/kitchen-ticket-create') ? 'active' : ''}>
+          <Link to="/kitchen-ticket-create" className="d-flex align-items-center p-3 text-white">
+            <i className="bi bi-plus-square me-2"></i>
+            Crear Ticket Manual
+          </Link>
+        </li>
       );
       menuItems.push(
         <li key="ticket-monitor" className={isActive('/ticket-monitor') ? 'active' : ''}>

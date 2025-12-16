@@ -11,7 +11,7 @@ interface ReportData {
     unit: string;
     movementType: string;
     reason: string;
-    performedBy: { email: string; firstName?: string; lastName?: string } | null;
+    performedBy: { email: string; firstName?: string; lastName?: string; username?:string } | null;
   }[];
   mostConsumedItems: { name: string; totalConsumed: number }[];
   consumptionTrend: { date: string; itemName: string; totalConsumed: number }[];

@@ -224,7 +224,7 @@ export const TicketMonitor: React.FC = () => {
 
   return (
     <div className="container py-5">
-      <h2 className="text-center mb-5">Monitor de Cocina - Tickets en Tiempo Real</h2>
+      {/* <h2 className="text-center mb-5">Monitor de Cocina - Tickets en Tiempo Real</h2> */}
       <div className="row g-4">
         {tickets.length === 0 ? (
             <div className="col-12 text-center">

@@ -175,7 +175,7 @@ const StockReport: React.FC = () => {
                         {movement.performedBy ? (
                           <div className="d-flex flex-column" style={{ lineHeight: '1.2' }}>
                             <span className="fw-bold small">{movement.performedBy.firstName} {movement.performedBy.lastName}</span>
-                            <span className="text-muted" style={{ fontSize: '0.75rem' }}>{movement.performedBy.email}</span>
+                            {/* <span className="text-muted" style={{ fontSize: '0.75rem' }}>{movement.performedBy.firstName} {movement.performedBy.lastName}</span> */}
                           </div>
                         ) : (
                           <span className="text-muted small">-</span>

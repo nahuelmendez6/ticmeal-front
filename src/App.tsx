@@ -15,6 +15,7 @@ import ActiveShiftForm from './components/ActiveShiftForm';
 import Verify from './pages/Verify';
 import StockReport from './components/StockReport';
 import TicketMonitor from './components/TicketMonitor';
+import KitchenTicketForm from './components/KitchenTicketForm';
 import './App.css';
 
 function App() {
@@ -100,6 +101,13 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <TicketsTablePage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/kitchen-ticket-create" element={
+            <ProtectedRoute>
+              <Layout>
+                <KitchenTicketForm />
               </Layout>
             </ProtectedRoute>
           } />
