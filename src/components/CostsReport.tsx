@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useCostsReport } from '../hooks/useCostsReport';
 import IngredientConsumptionCost from './IngredientConsumptionCost';
 import MenuItemConsumptionCost from './MenuItemConsumptionCost';
+import ConsumptionVsCostReport from './ConsumptionVsCostReport';
 
 const CostsReport: React.FC = () => {
   const { report, loading, error, refetch } = useCostsReport();
@@ -71,6 +72,10 @@ const CostsReport: React.FC = () => {
 
   return (
     <div className="container-fluid p-0">
+      <ConsumptionVsCostReport />
+
+      <hr className="my-5 border-secondary opacity-25" />
+
       {/* Cards de Resumen Estadístico */}
       <div className="row g-3 mb-4">
         {/* Card 1: Valor Total */}
@@ -205,6 +210,8 @@ const CostsReport: React.FC = () => {
       <hr className="my-5 border-secondary opacity-25" />
 
       <MenuItemConsumptionCost />
+
+      <ConsumptionVsCostReport />
     </div>
   );
 };

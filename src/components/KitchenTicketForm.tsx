@@ -45,6 +45,15 @@ interface User {
   isActive: boolean;
 }
 
+interface Ticket {
+  id: number;
+  userId: number;
+  status: string;
+  createdAt: string;
+  user?: User;
+  menuItems: MenuItem[];
+}
+
 // --- Componente de Icono ---
 const MenuItemIcon: React.FC<{ iconName: string }> = ({ iconName }) => {
   const Icon = iconMap[iconName] || AlertTriangle;
@@ -108,6 +117,8 @@ const KitchenTicketForm: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState<boolean>(false);
   const [selectedItems, setSelectedItems] = useState<Map<number, number>>(new Map());
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -140,6 +151,34 @@ const KitchenTicketForm: React.FC = () => {
     }
   }, [baseUrl]);
 
+  const fetchTickets = useCallback(async () => {
+    try {
+        setTicketsLoading(true);
+        const token = localStorage.getItem("token");
+        if (!token) {
+            throw new Error("No autenticado. Por favor, inicie sesión.");
+        }
+
+        const response = await fetch(`${baseUrl}/tickets`, {
+            headers: {
+                "Authorization": `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Error: ${response.status}`);
+        }
+
+        const data: Ticket[] = await response.json();
+        setTickets(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())); // Ordenar por más reciente
+    } catch (err) {
+        console.error(err instanceof Error ? err.message : 'No se pudo cargar la lista de tickets.');
+    } finally {
+        setTicketsLoading(false);
+    }
+  }, [baseUrl]);
+
   // Cargar turno activo y usuarios
   useEffect(() => {
     const fetchShift = async () => {
@@ -167,6 +206,11 @@ const KitchenTicketForm: React.FC = () => {
 
     init();
   }, [fetchUsers, baseUrl]);
+
+  // Cargar tickets
+  useEffect(() => {
+    fetchTickets();
+  }, [fetchTickets]);
 
   // Filtrar usuarios
   useEffect(() => {
@@ -261,6 +305,7 @@ const KitchenTicketForm: React.FC = () => {
       setSelectedItems(new Map());
       setSelectedUser(null);
       setSearchQuery('');
+      fetchTickets(); // Recargar la lista de tickets
       
       // Auto-ocultar mensaje de éxito
       setTimeout(() => setSuccessMessage(null), 5000);
@@ -414,6 +459,82 @@ const KitchenTicketForm: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Sección de Tickets Generados */}
+      <div className="card shadow-sm border-0 mt-4">
+        <div className="card-header bg-white py-3">
+          <h5 className="mb-0 text-secondary">
+            <i className="bi bi-list-check me-2"></i>
+            Tickets Recientes
+          </h5>
+        </div>
+        <div className="card-body p-0">
+          {ticketsLoading ? (
+            <div className="text-center py-4">
+              <div className="spinner-border text-secondary" role="status"><span className="visually-hidden">Cargando...</span></div>
+            </div>
+          ) : tickets.length === 0 ? (
+            <div className="text-center py-4 text-muted">No hay tickets registrados recientemente.</div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-hover mb-0 align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th scope="col" className="ps-4">ID</th>
+                    <th scope="col">Usuario</th>
+                    <th scope="col">Items</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tickets.map((ticket) => {
+                    const ticketUser = ticket.user || users.find(u => u.id === ticket.userId);
+                    const groupedItems = (ticket.menuItems || []).reduce((acc, item) => {
+                      acc[item.name] = (acc[item.name] || 0) + 1;
+                      return acc;
+                    }, {} as Record<string, number>);
+
+                    return (
+                      <tr key={ticket.id}>
+                        <td className="ps-4 fw-bold">#{ticket.id}</td>
+                        <td>
+                          {ticketUser ? (
+                            <div>
+                              <div className="fw-bold">{ticketUser.firstName} {ticketUser.lastName}</div>
+                              <small className="text-muted">{ticketUser.email}</small>
+                            </div>
+                          ) : <span className="text-muted">Usuario desconocido</span>}
+                        </td>
+                        <td>
+                          {Object.keys(groupedItems).length > 0 ? (
+                            <ul className="list-unstyled mb-0 small">
+                              {Object.entries(groupedItems).map(([name, quantity]) => (
+                                <li key={name} className="d-flex justify-content-between align-items-center">
+                                  <span>{name}</span>
+                                  <span className="badge bg-primary rounded-pill ms-2">{quantity}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <span className="text-muted small">Sin items</span>
+                          )}
+                        </td>
+                        <td>{new Date(ticket.createdAt).toLocaleString()}</td>
+                        <td>
+                          <span className={`badge ${ticket.status === 'DELIVERED' ? 'bg-success' : ticket.status === 'PENDING' ? 'bg-warning text-dark' : 'bg-secondary'}`}>
+                            {ticket.status === 'DELIVERED' ? 'Entregado' : ticket.status === 'PENDING' ? 'Pendiente' : ticket.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>
