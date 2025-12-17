@@ -9,7 +9,7 @@ interface LoginProps {
   showRegisterLink?: boolean;
 } 
 
-const Login: React.FC<LoginProps> = ({ showRegisterLink = false }) => {
+const Login: React.FC<LoginProps> = ({ showRegisterLink = true }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
