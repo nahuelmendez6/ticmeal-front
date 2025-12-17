@@ -3,8 +3,10 @@ import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import Login from './components/Login';
+import BackofficeLogin from './components/BackofficeLogin';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import BackofficeUserManagement from './components/BackofficeUserManagement';
 import UserManagement from './components/UserManagement'
 import Layout from './components/Layout';
 import MenuManagementPage from './pages/MenuManagementPage';
@@ -31,6 +33,15 @@ function App() {
               </PublicRoute>
             }
           />
+          <Route
+            path="admin/login"
+            element={
+              <PublicRoute>
+                <BackofficeLogin />
+              </PublicRoute>
+            }
+          />
+          <Route path="/backoffice/users" element={<BackofficeUserManagement />} />
           <Route
             path="/register"
             element={
