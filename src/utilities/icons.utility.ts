@@ -3,8 +3,9 @@ import {
   Plus, Coffee, Sandwich, Apple, Pizza, Trash2, FilePenLine, Beef, Hamburger,
   IceCreamBowl, Salad, Soup, Utensils, Wine, Banana, Cookie, Croissant, Dessert,
   Drumstick, EggFried, Ham, IceCreamCone, CupSoda, CakeSlice, Beer, Torus, Donut,
-  Egg, GlassWater, Milk, LucideProps, LucideIcon
+  Egg, GlassWater, Milk,
 } from 'lucide-react';
+import type { LucideProps, LucideIcon } from 'lucide-react';
 
 // Mapeo de Íconos Lucide
 const iconMapList = {

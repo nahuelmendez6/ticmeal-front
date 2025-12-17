@@ -9,6 +9,8 @@ export interface Category {
   createdAt: string; // suele llegar como string ISO
 }
 
+
+
 export interface RecipeIngredientRelation {
   id: number;
   quantity: number;

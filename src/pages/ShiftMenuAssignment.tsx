@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
-import type { ConnectDragSource, ConnectDropTarget } from 'react-dnd';
+// import type { ConnectDragSource, ConnectDropTarget } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TouchBackend } from 'react-dnd-touch-backend';
 import { Plus, 
@@ -77,7 +77,7 @@ const DraggableMenuItem: React.FC<DraggableMenuItemProps> = ({ item }) => {
   }));
 
   return (
-    <div ref={drag} className="list-group-item list-group-item-action" style={{ opacity: isDragging ? 0.5 : 1, cursor: 'move' }}>
+    <div ref={drag as unknown as React.Ref<HTMLDivElement>} className="list-group-item list-group-item-action" style={{ opacity: isDragging ? 0.5 : 1, cursor: 'move' }}>
       <IconComponent iconName={item.iconName} />
       {item.name}
     </div>
@@ -144,7 +144,7 @@ const ShiftDashboard: React.FC<ShiftDashboardProps> = ({
         </div>
 
         <div className="col-md-6">
-          <div ref={drop} className="card bg-light" style={{ minHeight: '400px' }}>
+          <div ref={drop as unknown as React.Ref<HTMLDivElement>} className="card bg-light" style={{ minHeight: '400px' }}>
             <div className="card-header">
               Menú del Turno: {shifts.find(s => s.id === activeShiftId)?.name}
             </div>
