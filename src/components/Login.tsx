@@ -44,7 +44,7 @@ const Login: React.FC<LoginProps> = ({ showRegisterLink = false }) => {
                   src={logo}
                   alt="Logo"
                   className="img-fluid d-block mx-auto mb-4"
-                  style={{ maxWidth: '120px' }}
+                  style={{ maxWidth: '250px' }}
                 />
                 
                 <form onSubmit={handleSubmit} className="needs-validation" noValidate>

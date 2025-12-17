@@ -19,6 +19,12 @@ interface TicketMenuItem {
     iconName: string;
 }
 
+interface TicketItem {
+    id: number;
+    quantity: number;
+    menuItem: TicketMenuItem;
+}
+
 interface TicketObservation {
     id: number;
     name: string;
@@ -32,7 +38,7 @@ interface Ticket {
     time: string;
     user: TicketUser;
     shift: TicketShift;
-    menuItems: TicketMenuItem[];
+    items: TicketItem[];
     observations: TicketObservation[];
     createdAt: string;
 }
@@ -226,7 +232,7 @@ const TicketsTable: React.FC = () => {
                                             <td>{ticket.shift.name}</td>
                                             <td>{new Date(ticket.createdAt).toLocaleString('es-ES')}</td>
                                             <td className="text-center">{getStatusBadge(ticket.status)}</td>
-                                            <td>{ticket.menuItems.map(item => item.name.trim()).join(', ')}</td>
+                                            <td>{ticket.items?.map(item => `${item.quantity} x ${item.menuItem.name.trim()}`).join(', ')}</td>
                                         </tr>
                                     ))
                                 ) : (

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import {
   Coffee, Apple, Pizza, Beef, Salad, Soup, Utensils, Wine,
   Banana, Cookie, Croissant, CupSoda, CakeSlice, Beer, Donut, EggFried,
-  GlassWater, Milk, IceCream, Drumstick, Ham, Hamburger, AlertTriangle, BottleWine, Sandwich
+  GlassWater, Milk, IceCream, Drumstick, Ham, Hamburger, AlertTriangle, BottleWine, Sandwich,
+  Leaf, Vegan, WheatOff, MilkOff, HeartPulse, FishOff, Baby
 } from 'lucide-react';
 
 // --- Icon Mapping ---
@@ -54,7 +55,8 @@ interface TicketMenuItem {
 
 interface TicketObservation {
   id: number;
-  description: string;
+  name: string;
+  iconName: string;
 }
 
 interface Ticket {
@@ -77,6 +79,22 @@ const MenuItemIcon: React.FC<{ iconName: string }> = ({ iconName }) => {
   return <Icon size={40} />;
 };
 
+const observationIconMap: { [key: string]: React.ElementType } = {
+  'WheatOff': WheatOff,
+  'Leaf': Leaf,
+  'Vegan': Vegan,
+  'MilkOff': MilkOff,
+  'AlertTriangle': AlertTriangle,
+  'HeartPulse': HeartPulse,
+  'FishOff': FishOff,
+  'Baby': Baby,
+  'Blender': CupSoda,
+};
+
+const ObservationIcon: React.FC<{ iconName: string }> = ({ iconName }) => {
+  const Icon = observationIconMap[iconName] || AlertTriangle;
+  return <Icon className="me-2" size={20} />;
+};
 // --- 3. Lógica de Negocio Dinámica ---
 type CategoryBehavior = 
   | { type: 'exclusive'; limit: 1 }
@@ -218,11 +236,11 @@ const ActiveShiftForm: React.FC = () => {
 
     // Construir el array de menuItemIds
     const menuItemIds: number[] = [];
-    selectedItems.forEach((quantity, id) => {
+    for (const [id, quantity] of selectedItems.entries()) {
       for (let i = 0; i < quantity; i++) {
         menuItemIds.push(id);
       }
-    });
+    }
 
     const payload = {
       pin,
@@ -403,6 +421,20 @@ const TicketView: React.FC<{ ticket: Ticket; onNewOrder: () => void, allMenuItem
                         <span className="badge bg-primary rounded-pill fs-6">
                           {item.quantity}
                         </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {ticket.observations && ticket.observations.length > 0 && (
+                <div className="mt-3 text-start">
+                  <h6 className="text-secondary">Observaciones:</h6>
+                  <ul className="list-group list-group-flush">
+                    {ticket.observations.map((obs) => (
+                      <li key={obs.id} className="list-group-item d-flex align-items-center px-0">
+                        <ObservationIcon iconName={obs.iconName} />
+                        <span>{obs.name}</span>
                       </li>
                     ))}
                   </ul>

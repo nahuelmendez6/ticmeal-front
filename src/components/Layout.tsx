@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { io } from 'socket.io-client';
 import { Bell } from 'lucide-react';
 
-import logonavbar from '../assets/react.svg'; // Placeholder, replace with actual logo
+import logonavbar from '../assets/sidebar-logo.png'; // Placeholder, replace with actual logo
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -25,8 +25,8 @@ interface Ticket {
     id: number;
     name: string;
   };
-  menuItems: { id: number; name: string }[];
-  observations: { id: number; description: string }[];
+  menuItems: { id: number; name: string; iconName: string }[];
+  observations: { id: number; name: string; iconName: string }[];
   createdAt: string;
 }
 
@@ -40,15 +40,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // Handle window resize
   useEffect(() => {
+    // Variable to track the screen size category (small/large) to avoid re-renders on every pixel change.
+    let isSmall = window.innerWidth <= 810;
+    setSidebarCollapsed(isSmall);
+
     const handleResize = () => {
-      // Colapsar en pantallas pequeñas
-      if (window.innerWidth <= 768) {
-        setSidebarCollapsed(true);
+      const newIsSmall = window.innerWidth <= 810;
+      // Only update state when crossing the breakpoint to avoid overriding manual toggles.
+      if (newIsSmall !== isSmall) {
+        isSmall = newIsSmall;
+        setSidebarCollapsed(newIsSmall);
       }
     };
 
     window.addEventListener('resize', handleResize);
-    handleResize(); // Initial check
 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -240,7 +245,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             src={logonavbar}
             alt="Logo"
             className="img-fluid d-block mx-auto mb-4"
-            style={{ maxWidth: '150px' }}
+            style={{ maxWidth: '200px' }}
           />
         </div>
 
@@ -252,9 +257,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Page Content */}
       <div id="content" className={sidebarCollapsed ? 'sidebar-collapsed' : ''}>
         {/* Navbar */}
-        <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm" style={{ position: 'relative', zIndex: 1045 }}>
           <div className="container-fluid">
-            <button type="button" id="sidebarCollapse" className="btn btn-dark" onClick={toggleSidebar}>
+            <button type="button" id="sidebarCollapse" className="btn btn-dark" onClick={toggleSidebar} style={{ display: 'inline-block' }}>
               <i className="bi bi-list"></i>
             </button>
             <div className="ms-auto d-flex align-items-center">
