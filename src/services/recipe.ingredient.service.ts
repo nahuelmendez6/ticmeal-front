@@ -1,4 +1,6 @@
-const BASE = `http://localhost:3000/recipe-ingredients`;
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/recipe-ingredients';
+
+// import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export const recipeIngredientsService = {
   add(recipe: any, token: string) {

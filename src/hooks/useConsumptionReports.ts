@@ -11,6 +11,8 @@ export const useConsumptionReports = (startDate: string, endDate: string, limit:
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
   useEffect(() => {
     if (!startDate || !endDate) return;
 
@@ -28,7 +30,7 @@ export const useConsumptionReports = (startDate: string, endDate: string, limit:
         "Authorization": `Bearer ${token}`,
       };
 
-      const baseUrl = 'http://localhost:3000/reports';
+      const baseUrl = `${apiUrl}/reports`;
       const queryParams = `?startDate=${startDate}&endDate=${endDate}&limit=${limit}`;
 
       try {
@@ -51,7 +53,7 @@ export const useConsumptionReports = (startDate: string, endDate: string, limit:
     };
 
     fetchReports();
-  }, [startDate, endDate, limit]);
+  }, [startDate, endDate, limit, apiUrl]);
 
   return { mostConsumed, loading, error };
 };

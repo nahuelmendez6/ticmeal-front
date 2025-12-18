@@ -86,13 +86,15 @@ const UserManagement: React.FC = () => {
     observationsIds: [],
   });
 
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No autenticado');
 
-      const response = await fetch('http://localhost:3000/users', {
+      const response = await fetch(`${baseUrl}/users`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -108,7 +110,7 @@ const UserManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [baseUrl]);
 
   // Data fetching hooks
   useEffect(() => {
@@ -123,7 +125,7 @@ const UserManagement: React.FC = () => {
           const token = localStorage.getItem('token');
           if (!token) throw new Error('No autenticado');
 
-          const response = await fetch('http://localhost:3000/observations', {
+          const response = await fetch(`${baseUrl}/observations`, {
             headers: { 'Authorization': `Bearer ${token}` },
           });
 
@@ -139,7 +141,7 @@ const UserManagement: React.FC = () => {
       }
     };
     fetchObservations();
-  }, [showModal]);
+  }, [showModal, baseUrl]);
 
   // Modal and Form handlers
   const handleCloseModal = () => {
@@ -196,10 +198,10 @@ const UserManagement: React.FC = () => {
 
     const isEditing = editingUser !== null;
     const endpoint = isEditing
-      ? `http://localhost:3000/users/${editingUser.id}`
+      ? `${baseUrl}/users/${editingUser.id}`
       : (newUser.role === 'diner'
-        ? 'http://localhost:3000/auth/register-diner'
-        : 'http://localhost:3000/auth/register-kitchen-admin');
+        ? `${baseUrl}/auth/register-diner`
+        : `${baseUrl}/auth/register-kitchen-admin`);
     
     const method = isEditing ? 'PATCH' : 'POST';
 

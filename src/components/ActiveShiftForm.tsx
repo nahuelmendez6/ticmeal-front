@@ -166,6 +166,8 @@ const ActiveShiftForm: React.FC = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 
   // --- Efecto para Obtener Datos de la API ---
   useEffect(() => {
@@ -174,7 +176,7 @@ const ActiveShiftForm: React.FC = () => {
         setLoading(true);
 
         const token = localStorage.getItem("token");
-        const response = await fetch('http://localhost:3000/shifts/active-by-hour', {
+        const response = await fetch(`${baseUrl}/shifts/active-by-hour`, {
         headers: {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json"
@@ -196,7 +198,7 @@ const ActiveShiftForm: React.FC = () => {
     };
 
     fetchActiveShift();
-  }, []);
+  }, [baseUrl]);
 
   // --- Manejadores de Eventos ---
   const handleAddItem = (item: MenuItem) => {
@@ -249,7 +251,7 @@ const ActiveShiftForm: React.FC = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch('http://localhost:3000/tickets', {
+      const response = await fetch(`${baseUrl}/tickets`, {
         method: 'POST',
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -328,7 +330,7 @@ const TicketView: React.FC<{ ticket: Ticket; onNewOrder: () => void, allMenuItem
   const handleAction = async (action: 'pause' | 'cancel') => {
     setActionLoading(action);
     try {
-      const response = await fetch(`http://localhost:3000/tickets/${ticket.id}/${action}`, {
+      const response = await fetch(`${baseUrl}/tickets/${ticket.id}/${action}`, {
         method: 'PATCH',
         headers: {
           "Content-Type": "application/json"

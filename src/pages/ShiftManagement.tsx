@@ -20,6 +20,8 @@ const ShiftManagement: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [shiftToDelete, setShiftToDelete] = useState<number | null>(null);
 
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
   // Estado para el formulario
   const [formData, setFormData] = useState({
     name: '',
@@ -32,7 +34,7 @@ const ShiftManagement: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No autenticado');
-      const response = await fetch('http://localhost:3000/shifts', {
+      const response = await fetch(`${baseUrl}/shifts`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Error al cargar los turnos');
@@ -41,7 +43,7 @@ const ShiftManagement: React.FC = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocurrió un error desconocido al cargar los turnos');
     }
-  }, []);
+  }, [baseUrl]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -90,7 +92,7 @@ const ShiftManagement: React.FC = () => {
     setSubmitting(true);
     setError(null);
 
-    const url = editingShift ? `http://localhost:3000/shifts/${editingShift.id}` : 'http://localhost:3000/shifts';
+    const url = editingShift ? `${baseUrl}/shifts/${editingShift.id}` : `${baseUrl}/shifts`;
     const method = editingShift ? 'PATCH' : 'POST';
 
     const payload = {
@@ -145,7 +147,7 @@ const ShiftManagement: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No autenticado');
 
-      const response = await fetch(`http://localhost:3000/shifts/${shiftToDelete}`, {
+      const response = await fetch(`${baseUrl}/shifts/${shiftToDelete}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });

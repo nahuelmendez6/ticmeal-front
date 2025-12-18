@@ -184,9 +184,11 @@ const ShiftMenuAssignment: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
   const fetchShifts = useCallback(async () => {
     const token = localStorage.getItem('token');
-    const response = await fetch('http://localhost:3000/shifts/menu-active', {
+    const response = await fetch(`${baseUrl}/shifts/menu-active`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
     if (!response.ok) throw new Error('Error al cargar los turnos');
@@ -200,17 +202,17 @@ const ShiftMenuAssignment: React.FC = () => {
     if (data.length > 0) {
       setActiveShiftId(data[0].id);
     }
-  }, []);
+  }, [baseUrl]);
 
   const fetchMenuItems = useCallback(async () => {
     const token = localStorage.getItem('token');
-    const response = await fetch('http://localhost:3000/menu-items', {
+    const response = await fetch(`${baseUrl}/menu-items`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
     if (!response.ok) throw new Error('Error al cargar los ítems del menú');
     const data: MenuItem[] = await response.json();
     setMenuItems(data.filter(item => item.isActive));
-  }, []);
+  }, [baseUrl]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -230,7 +232,7 @@ const ShiftMenuAssignment: React.FC = () => {
     const token = localStorage.getItem('token');
     const menuItemIds = items.map(i => i.id);
     try {
-      const response = await fetch(`http://localhost:3000/shifts/${shiftId}`, {
+      const response = await fetch(`${baseUrl}/shifts/${shiftId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -244,7 +246,7 @@ const ShiftMenuAssignment: React.FC = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido al guardar');
     }
-  }, []);
+  }, [baseUrl]);
 
   const handleDrop = useCallback(async (item: MenuItem) => {
     if (activeShiftId) {

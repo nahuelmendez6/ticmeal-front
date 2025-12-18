@@ -56,6 +56,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
   // Load user from localStorage on mount
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -75,7 +77,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const loginWithCredentials = async (username: string, password: string): Promise<boolean> => {
       try {
         // 1. Petición al Backend
-        const response = await fetch('http://localhost:3000/auth/login', {
+        const response = await fetch(`${baseUrl}/auth/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -127,7 +129,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const registerCompany = async (data: RegisterData): Promise<RegisterResult | null> => {
     try {
-      const response = await fetch('http://localhost:3000/auth/register-company', {
+      const response = await fetch(`${baseUrl}/auth/register-company`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -62,6 +62,8 @@ const TicketsTable: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
     const stats = useMemo(() => {
         if (!tickets.length) {
             return {
@@ -108,7 +110,7 @@ const TicketsTable: React.FC = () => {
                     throw new Error("No autenticado. Por favor, inicie sesión.");
                 }
 
-                const response = await fetch('http://localhost:3000/tickets', {
+                const response = await fetch(`${baseUrl}/tickets`, {
                     headers: {
                         "Authorization": `Bearer ${token}`,
                     },
@@ -130,7 +132,7 @@ const TicketsTable: React.FC = () => {
         };
 
         fetchTickets();
-    }, []);
+    }, [baseUrl]);
 
     if (loading) {
         return (

@@ -29,9 +29,9 @@ export const useConsumptionVsCostReport = () => {
   const [report, setReport] = useState<ConsumptionVsCostReportData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
   const fetchReport = useCallback(async (startDate: string, endDate: string) => {
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     setLoading(true);
     setError(null);
     try {
@@ -63,7 +63,7 @@ export const useConsumptionVsCostReport = () => {
     } finally {
       setLoading(false);
     }
-  }, [baseUrl]);
+  }, []);
 
   return { report, loading, error, fetchReport };
 };

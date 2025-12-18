@@ -11,6 +11,8 @@ const Verify: React.FC = () => {
   const location = useLocation();
   const email = location.state?.email;
 
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
   if (!email) {
     // Redirect to register if no email is present
     navigate('/register');
@@ -24,7 +26,7 @@ const Verify: React.FC = () => {
     setSubmitting(true);
 
     try {
-      const response = await fetch('http://localhost:3000/auth/verify-registration', {
+      const response = await fetch(`${baseUrl}/auth/verify-registration`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
