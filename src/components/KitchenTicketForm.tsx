@@ -288,7 +288,7 @@ const KitchenTicketForm: React.FC = () => {
         throw new Error(errorData.message || 'Error al crear el ticket.');
       }
 
-      const ticket = await response.json();
+      // const ticket = await response.json();
 
       // Marcar como usado (entregado) inmediatamente para registrar movimientos de stock
     //   const deliverResponse = await fetch(`${baseUrl}/tickets/${ticket.id}/deliver`, {

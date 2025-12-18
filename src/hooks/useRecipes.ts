@@ -13,10 +13,10 @@ interface EditingItem {
   recipeIngredients: RecipeIngredient[];
 }
 
-interface NewRecipeIngredient {
-  ingredientId: string;
-  quantity: number;
-}
+// interface NewRecipeIngredient {
+//   ingredientId: string;
+//   quantity: number;
+// }
 
 export const useRecipes = (token: string) => {
   
@@ -39,7 +39,7 @@ export const useRecipes = (token: string) => {
       }, token)),
       ...toUpdate.map((n) => {
         const current = original.find((o) => o.ingredient.id === Number(n.ingredientId));
-        return recipeIngredientsService.update(current!.id, { quantity: n.quantity }, token);
+        return recipeIngredientsService.update(current!.id!, { quantity: n.quantity }, token);
       })
     ]);
   };

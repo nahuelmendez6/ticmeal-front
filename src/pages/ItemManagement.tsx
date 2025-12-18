@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import CategoryTabs from '../components/menu/CategoryTabs';
 import ItemForm from '../components/menu/ItemForm';
 import ItemList from '../components/menu/ItemList';
@@ -8,9 +8,11 @@ import { useMenuItems } from '../hooks/useMenu';
 import { useRecipes } from '../hooks/useRecipes';
 import { categoriesService } from '../services/categories.service';
 import { ingredientsService } from '../services/ingredient.service';
-import type { Category, MenuItem } from '../types/menu';
+import type { Category } from '../types/menu';
 import type { Ingredient } from '../types/ingtredient';
 import type { RecipeInput, RecipeIngredient } from '../types/recipe';
+
+type MenuItem = ReturnType<typeof useMenuItems>['items'][number];
 
 // --- Main Component ---
 const ItemManagement: React.FC = () => {
@@ -124,7 +126,7 @@ const ItemManagement: React.FC = () => {
     setEditingItem(item);
     setNewItem({
       name: item.name,
-      stock: item.stock,
+      stock: item.stock ?? 0,
       minStock: item.minStock ?? 0,
       maxOrder: item.maxOrder ?? 0,
       cost: item.cost ?? 0,
@@ -190,7 +192,7 @@ const ItemManagement: React.FC = () => {
         {error && <div className="alert alert-danger" role="alert">{error}</div>}
         {/* --- Form Section --- */}
         <ItemForm
-          editingItem={editingItem}
+          editingItem={editingItem as any}
           categories={categories}
           onSubmit={handleSubmit}
           newItemState={newItem}
@@ -200,7 +202,7 @@ const ItemManagement: React.FC = () => {
 
  {/* --- Recipe Section --- */}
         <RecipeEditor
-          editingItem={editingItem}
+          editingItem={editingItem as any}
           ingredients={systemIngredients}
           recipeState={[recipeInputs, setRecipeInputs]}
         />
@@ -216,7 +218,7 @@ const ItemManagement: React.FC = () => {
               items={items.map(item => ({
                 ...item,
                 category: item.category ?? undefined,
-              }))}
+              })) as any}
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}
             />
@@ -224,9 +226,9 @@ const ItemManagement: React.FC = () => {
 
           {/* Items Table */}
           <ItemList
-            items={filteredItems}
+            items={filteredItems as any}
             selectedCategory={selectedCategory}
-            onEdit={handleEditClick}
+            onEdit={handleEditClick as any}
             onDelete={handleDeleteClick}
           />
         </div>

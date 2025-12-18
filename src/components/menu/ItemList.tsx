@@ -5,7 +5,7 @@ import {
   Drumstick, EggFried, Ham, IceCreamCone, CupSoda, CakeSlice, Beer, Torus, Donut,
   Egg, GlassWater, Milk
 } from "lucide-react";
-import type { LucideProps, LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 // ----------------------------------------------------------------------
 // ICON MAP DIRECTO
@@ -68,7 +68,7 @@ interface Props {
   onDelete: (id: number) => void;
 }
 
-const ItemList: React.FC<Props> = ({ items, selectedCategory, onEdit, onDelete }) => {
+const ItemList: React.FC<Props> = ({ items, onEdit, onDelete }) => {
   return (
     <div className="table-responsive" style={{ maxHeight: '350px', overflowY: 'auto' }}>
       <table className="table table-hover align-middle">

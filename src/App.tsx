@@ -15,7 +15,7 @@ import TicketsTablePage from './pages/TicketsTablePage';
 import ReportsPage from './pages/ReportsPage';
 import ActiveShiftForm from './components/ActiveShiftForm';
 import Verify from './pages/Verify';
-import StockReport from './components/StockReport';
+// import StockReport from './components/StockReport';
 import TicketMonitor from './components/TicketMonitor';
 import KitchenTicketForm from './components/KitchenTicketForm';
 import './App.css';

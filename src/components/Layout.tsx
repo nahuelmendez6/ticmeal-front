@@ -34,7 +34,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const { user, userProfile, logout } = useAuth();
+  const { userProfile, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
