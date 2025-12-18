@@ -4,7 +4,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/reports';
 
 export const getInventoryValue = async (): Promise<InventoryValueReport> => {
   const token = localStorage.getItem('token');
-  const response = await fetch(`${API_URL}/inventory-value`, {
+  const response = await fetch(`${API_URL}/reports/inventory-value`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -19,7 +19,7 @@ export const getInventoryValue = async (): Promise<InventoryValueReport> => {
 
 export const getMenuItemConsumptionCost = async (startDate: string, endDate: string): Promise<MenuItemConsumptionCost[]> => {
   const token = localStorage.getItem('token');
-  const response = await fetch(`${API_URL}/menu-item-consumption-cost?startDate=${startDate}&endDate=${endDate}`, {
+  const response = await fetch(`${API_URL}/reports/menu-item-consumption-cost?startDate=${startDate}&endDate=${endDate}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -34,7 +34,7 @@ export const getMenuItemConsumptionCost = async (startDate: string, endDate: str
 
 export const getIngredientConsumptionCost = async (startDate: string, endDate: string): Promise<IngredientConsumptionCost[]> => {
   const token = localStorage.getItem('token');
-  const response = await fetch(`${API_URL}/ingredient-consumption-cost?startDate=${startDate}&endDate=${endDate}`, {
+  const response = await fetch(`${API_URL}/reports/ingredient-consumption-cost?startDate=${startDate}&endDate=${endDate}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
