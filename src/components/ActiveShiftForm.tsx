@@ -240,6 +240,9 @@ const ActiveShiftForm: React.FC = () => {
     setSubmitting(true);
     setError(null);
 
+    // ID de la empresa (asegúrate que coincida con tu base de datos)
+    const tenantId = 1; 
+
     // Construir el array de menuItemIds
     const menuItemIds: number[] = [];
     for (const [id, quantity] of selectedItems.entries()) {
@@ -254,11 +257,11 @@ const ActiveShiftForm: React.FC = () => {
     };
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${baseUrl}/tickets`, {
+      // 1. URL pública con tenantId
+      // 2. SIN el header "Authorization" para evitar el "Bearer null"
+      const response = await fetch(`${baseUrl}/tickets/public/${tenantId}`, {
         method: 'POST',
         headers: {
-          "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
