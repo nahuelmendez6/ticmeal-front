@@ -89,9 +89,9 @@ function App() {
           <Route
             path="/active-shift"
             element={
-              <ProtectedRoute>
+              // <ProtectedRoute>
                   <ActiveShiftForm />
-              </ProtectedRoute>
+              // </ProtectedRoute>
             }
           />
           <Route path="/users" element={
