@@ -175,20 +175,24 @@ const ActiveShiftForm: React.FC = () => {
       try {
         setLoading(true);
 
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${baseUrl}/shifts/active-by-hour`, {
-        headers: {
-            "Authorization": `Bearer ${token}`,
+        // 1. Define el ID de tu empresa (puedes obtenerlo de una variable de entorno o config)
+        const tenantId = 1; 
+
+        // 2. PETICIÓN LIMPIA: Sin Authorization header y con el ID en la URL
+        const response = await fetch(`${baseUrl}/shifts/active-by-hour/${tenantId}`, {
+          method: 'GET',
+          headers: {
             "Content-Type": "application/json"
-        },
-        credentials: "include" // si usás cookies también
+          }
         });
+
         if (!response.ok) {
           throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
-        const data: Shift[] = await response.json();
-        // El endpoint devuelve un array, tomamos el primer elemento
-        setShift(data[0] || null);
+        
+        const data = await response.json();
+        // Si tu API ahora devuelve un objeto directo del turno, quita el [0]
+        setShift(Array.isArray(data) ? data[0] : data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Ocurrió un error al cargar el turno.');
         console.error(err);
