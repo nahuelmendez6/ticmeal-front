@@ -54,10 +54,10 @@ const TenantQRCode: React.FC<TenantQRCodeProps> = ({ tenantId, companyName }) =>
   return (
     <div className="card p-4 text-center shadow-sm">
       <div className="card-body">
-        <h4 className="card-title">Código QR para {companyName}</h4>
-        <p className="text-muted">
+        <h4 className="card-title">Escaneá este QR para acceder al menú del turno</h4>
+        {/* <p className="text-muted">
           Este QR permite a los usuarios acceder al menú del turno activo para realizar pedidos.
-        </p>
+        </p> */}
         <div id="qr-code-container" className="my-3 d-flex justify-content-center">
           <QRCodeSVG
             value={shareUrl}
