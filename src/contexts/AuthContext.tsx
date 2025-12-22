@@ -62,16 +62,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+  // Función auxiliar para decodificar el token y obtener datos de la empresa si faltan
+  const getCompanyFromToken = (token: string) => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      const decoded = JSON.parse(jsonPayload);
+      if (decoded.companyId) {
+        return { id: decoded.companyId, name: decoded.companyName || 'Mi Empresa' };
+      }
+    } catch (e) {
+      console.error('Error decoding token:', e);
+    }
+    return undefined;
+  };
+
   // Load user from localStorage on mount
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const storedUserProfile = localStorage.getItem('userProfile');
     const storedToken = localStorage.getItem('token');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      // Si falta la empresa, intentar recuperarla del token
+      if (!parsedUser.company && storedToken) {
+        parsedUser.company = getCompanyFromToken(storedToken);
+      }
+      setUser(parsedUser);
     }
     if (storedUserProfile) {
-      setUserProfile(JSON.parse(storedUserProfile));
+      const parsedProfile = JSON.parse(storedUserProfile);
+      if (!parsedProfile.company && storedToken) {
+        parsedProfile.company = getCompanyFromToken(storedToken);
+      }
+      setUserProfile(parsedProfile);
     }
     if (storedToken) {
       setToken(storedToken);
@@ -102,6 +129,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const accessToken = data.access_token || '';
         const payload = data.payload || {};
         
+        // Intentar obtener la empresa del payload o del token
+        let companyData = payload.company;
+        if (!companyData && accessToken) {
+          companyData = getCompanyFromToken(accessToken);
+        }
+
         // Store user data
         const userData: User = {
           // Usar el username del payload, que es el que valida el backend
@@ -110,7 +143,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           role: payload.role, 
           // El email no está en el payload actual, lo dejamos como undefined
           email: payload.email, // O undefined si estás seguro de que el backend no lo devuelve
-          company: payload.company,
+          company: companyData,
         };
 
         // 3. Actualización de Estados y Almacenamiento

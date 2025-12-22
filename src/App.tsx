@@ -91,7 +91,9 @@ function App() {
             path="/qr-generator" 
             element={
               <ProtectedRoute>
-                <QRGeneratorPage />
+                <Layout>
+                  <QRGeneratorPage />
+                </Layout>
               </ProtectedRoute>
             } 
           />
