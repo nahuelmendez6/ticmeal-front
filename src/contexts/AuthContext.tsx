@@ -25,6 +25,10 @@ interface User {
   username: string;
   email?: string;
   role?: string;
+  company?: {
+    id: number;
+    name: string;
+  };
 }
 
 interface AuthContextType {
@@ -106,6 +110,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           role: payload.role, 
           // El email no está en el payload actual, lo dejamos como undefined
           email: payload.email, // O undefined si estás seguro de que el backend no lo devuelve
+          company: payload.company,
         };
 
         // 3. Actualización de Estados y Almacenamiento

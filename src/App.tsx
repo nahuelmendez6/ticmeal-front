@@ -18,6 +18,7 @@ import Verify from './pages/Verify';
 // import StockReport from './components/StockReport';
 import TicketMonitor from './components/TicketMonitor';
 import KitchenTicketForm from './components/KitchenTicketForm';
+import QRGeneratorPage from './pages/QRGeneratorPage';
 import './App.css';
 
 function App() {
@@ -86,8 +87,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route 
+            path="/qr-generator" 
+            element={
+              <ProtectedRoute>
+                <QRGeneratorPage />
+              </ProtectedRoute>
+            } 
+          />
           <Route
-            path="/active-shift"
+            path="/active-shift/:tenantId"
             element={
               // <ProtectedRoute>
                   <ActiveShiftForm />

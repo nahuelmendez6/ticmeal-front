@@ -168,6 +168,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             Menú
           </Link>
         </li>,
+        <li key="qr-generator" className={isActive('/qr-generator') ? 'active' : ''}>
+          <Link to="/qr-generator" className="d-flex align-items-center p-3 text-white">
+            <i className="bi bi-qr-code me-2"></i>
+            Generador QR
+          </Link>
+        </li>,
         <li key="reports" className={isActive('/reports') ? 'active' : ''}>
           <Link to="/reports" className="d-flex align-items-center p-3 text-white">
             <i className="bi bi-bar-chart me-2"></i>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import {
   Coffee, Apple, Pizza, Beef, Salad, Soup, Utensils, Wine,
   Banana, Cookie, Croissant, CupSoda, CakeSlice, Beer, Donut, EggFried,
@@ -157,6 +158,7 @@ const isItemButtonDisabled = (item: MenuItem, selectedItems: Map<number, number>
 };
 // --- 2. Componente Principal del Formulario ---
 const ActiveShiftForm: React.FC = () => {
+  const { tenantId } = useParams<{ tenantId: string }>();
   // --- Estados del Componente ---
   const [shift, setShift] = useState<Shift | null>(null);
   const [selectedItems, setSelectedItems] = useState<Map<number, number>>(new Map());
@@ -172,11 +174,9 @@ const ActiveShiftForm: React.FC = () => {
   // --- Efecto para Obtener Datos de la API ---
   useEffect(() => {
     const fetchActiveShift = async () => {
+      if (!tenantId) return;
       try {
         setLoading(true);
-
-        // 1. Define el ID de tu empresa (puedes obtenerlo de una variable de entorno o config)
-        const tenantId = 1; 
 
         // 2. PETICIÓN LIMPIA: Sin Authorization header y con el ID en la URL
         const response = await fetch(`${baseUrl}/shifts/active-by-hour/${tenantId}`, {
@@ -202,7 +202,7 @@ const ActiveShiftForm: React.FC = () => {
     };
 
     fetchActiveShift();
-  }, [baseUrl]);
+  }, [baseUrl, tenantId]);
 
   // --- Manejadores de Eventos ---
   const handleAddItem = (item: MenuItem) => {
@@ -237,11 +237,9 @@ const ActiveShiftForm: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!tenantId) return;
     setSubmitting(true);
     setError(null);
-
-    // ID de la empresa (asegúrate que coincida con tu base de datos)
-    const tenantId = 1; 
 
     // Construir el array de menuItemIds
     const menuItemIds: number[] = [];
