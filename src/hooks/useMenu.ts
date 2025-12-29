@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { menuItemsService} from "../services/menu.items.service";
+import { menuItemsService } from "../services/menu.items.service";
 
 interface MenuItem {
   id: number;
@@ -14,37 +14,46 @@ interface MenuItem {
   } | null;
   iconName: string | null;
   isActive: boolean;
-  recipeIngredients: any[]; // Puedes mejorar este tipo si lo necesitas
+  recipeIngredients: any[];
 }
 
 export const useMenuItems = () => {
   const [items, setItems] = useState<MenuItem[]>([]);
-  const token = localStorage.getItem("token") || "";
+  const [loading, setLoading] = useState(false); // Opcional: para manejar estados de carga
 
   const fetchItems = useCallback(async () => {
-    const data = await menuItemsService.getAll(token);
-    setItems(data.filter((i: any) => i.isActive));
-  }, [token]);
+    try {
+      setLoading(true);
+      const data = await menuItemsService.getAll();
+      // Filtramos solo los activos
+      setItems(data.filter((i: MenuItem) => i.isActive));
+    } catch (error) {
+      console.error("Error fetching menu items:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const createItem = async (data: any) => {
-    const item = await menuItemsService.create(data, token);
+    const item = await menuItemsService.create(data);
     await fetchItems();
     return item;
   };
 
   const updateItem = async (id: number, data: any) => {
-    const item = await menuItemsService.update(id, data, token);
+    const item = await menuItemsService.update(id, data);
     await fetchItems();
     return item;
   };
 
   const deleteItem = async (id: number) => {
-    await menuItemsService.softDelete(id, token);
+    await menuItemsService.softDelete(id);
     await fetchItems();
   };
 
   return {
     items,
+    loading,
     fetchItems,
     createItem,
     updateItem,
