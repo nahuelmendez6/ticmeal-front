@@ -19,6 +19,7 @@ import Verify from './pages/Verify';
 import TicketMonitor from './components/TicketMonitor';
 import KitchenTicketForm from './components/KitchenTicketForm';
 import QRGeneratorPage from './pages/QRGeneratorPage';
+import MealShiftsPage from './pages/MealShiftsPage';
 import './App.css';
 
 function App() {
@@ -138,6 +139,13 @@ function App() {
               <Layout>
                 <TicketMonitor />
               </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/meal-shifts" element={
+            <ProtectedRoute>
+              {/* <Layout> */}
+                <MealShiftsPage />
+              {/* </Layout> */}
             </ProtectedRoute>
           } />
           <Route path="/" element={<Navigate to="/login" replace />} />

@@ -212,6 +212,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </li>
       );
       menuItems.push(
+        <li key="meal-shifts" className={isActive('/meal-shifts') ? 'active' : ''}>
+          <Link to="/meal-shifts" className="d-flex align-items-center p-3 text-white">
+            <i className="bi bi-basket me-2"></i>
+            Producción Diaria
+          </Link>
+        </li>
+      );
+      menuItems.push(
         <li key="ticket-monitor" className={isActive('/ticket-monitor') ? 'active' : ''}>
           <Link to="/ticket-monitor" className="d-flex align-items-center p-3 text-white">
             <i className="bi bi-tv me-2"></i>

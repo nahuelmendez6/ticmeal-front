@@ -22,7 +22,7 @@ export const fetchShifts = async () => {
     if (!response.ok) {
         throw new Error('Error al cargar los turnos')
     }
-    return response.json;
+    return response.json();
 }
 
 /**
