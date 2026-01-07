@@ -27,6 +27,7 @@ export interface MenuItem {
   minStock: number | null;
   isActive: boolean;
   maxOrder: number | null;
+  type: 'SIMPLE' | 'COMPUESTO';
 
   recipeIngredients: RecipeIngredientRelation[];
 }

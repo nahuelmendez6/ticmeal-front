@@ -12,10 +12,16 @@ import type { Category } from '../types/menu';
 import type { Ingredient } from '../types/ingtredient';
 import type { RecipeInput, RecipeIngredient } from '../types/recipe';
 
-type MenuItem = ReturnType<typeof useMenuItems>['items'][number];
+// type MenuItem = ReturnType<typeof useMenuItems>['items'][number];
+
+import type { MenuItem } from '../types/menu';
+
+interface ItemManagementProps {
+  itemType?: 'SIMPLE' | 'COMPUESTO';
+}
 
 // --- Main Component ---
-const ItemManagement: React.FC = () => {
+const ItemManagement: React.FC<ItemManagementProps> = ({ itemType }) => {
   const { items, fetchItems, createItem, updateItem, deleteItem } = useMenuItems();
   const token = localStorage.getItem('token') || '';
   const { syncRecipe } = useRecipes(token);
@@ -39,6 +45,7 @@ const ItemManagement: React.FC = () => {
     maxOrder: 0,
     cost: 0,
     iconName: 'Coffee',
+    type: itemType || 'SIMPLE',
   });
 
   useEffect(() => {
@@ -71,19 +78,25 @@ const ItemManagement: React.FC = () => {
     fetchInitialData();
   }, [fetchItems, token]);
 
+  // Filter items based on the prop itemType
+  const visibleItems = useMemo(() => {
+    if (!itemType) return items;
+    return items.filter((item: any) => item.type === itemType);
+  }, [items, itemType]);
+
   useEffect(() => {
     // Si estamos cargando o no hay una categoría seleccionada, no hacemos nada.
     if (loading || !selectedCategory) return;
 
     // Verificamos si la categoría actual todavía tiene ítems.
-    const categoryHasItems = items.some(item => item.category?.name === selectedCategory);
+    const categoryHasItems = visibleItems.some(item => item.category?.name === selectedCategory);
 
     if (!categoryHasItems) {
       // Si no tiene, buscamos la primera categoría que sí tenga ítems y la seleccionamos.
-      const nextCategoryWithItems = categories.find(cat => items.some(item => item.category?.id === cat.id));
+      const nextCategoryWithItems = categories.find(cat => visibleItems.some(item => item.category?.id === cat.id));
       setSelectedCategory(nextCategoryWithItems ? nextCategoryWithItems.name : null);
     }
-  }, [items, categories, selectedCategory, loading]);
+  }, [visibleItems, categories, selectedCategory, loading]);
 
   const handleSubmit = async (formData: typeof newItem, recipeData: RecipeInput[]) => {
     setIsSubmitting(true);
@@ -132,6 +145,7 @@ const ItemManagement: React.FC = () => {
       cost: item.cost ?? 0,
       categoryId: String(item.category?.id ?? ''),
       iconName: item.iconName ?? 'Coffee',
+      type: item.type || itemType || 'SIMPLE',
     });
 
     const existingRecipeInputs: RecipeInput[] = item.recipeIngredients.map((ri: RecipeIngredient) => ({
@@ -154,6 +168,7 @@ const ItemManagement: React.FC = () => {
       categoryId: categories.length > 0 ? String(categories[0].id) : '',
       cost: 0,
       iconName: 'Coffee',
+      type: itemType || 'SIMPLE',
     });
     setRecipeInputs([]);
   };
@@ -182,8 +197,8 @@ const ItemManagement: React.FC = () => {
 
   const filteredItems = useMemo(() => {
     if (!selectedCategory) return [];
-    return items.filter(item => item.category?.name === selectedCategory);
-  }, [items, selectedCategory]);
+    return visibleItems.filter(item => item.category?.name === selectedCategory);
+  }, [visibleItems, selectedCategory]);
 
 
   return (
@@ -200,12 +215,14 @@ const ItemManagement: React.FC = () => {
           recipeIngredients={recipeInputs}
         />
 
- {/* --- Recipe Section --- */}
-        <RecipeEditor
-          editingItem={editingItem as any}
-          ingredients={systemIngredients}
-          recipeState={[recipeInputs, setRecipeInputs]}
-        />
+        {/* --- Recipe Section (Only for Compound Products) --- */}
+        {itemType === 'COMPUESTO' && (
+          <RecipeEditor
+            editingItem={editingItem as any}
+            ingredients={systemIngredients}
+            recipeState={[recipeInputs, setRecipeInputs]}
+          />
+        )}
 
         {/* --- List Section --- */}
         <div>
@@ -215,7 +232,7 @@ const ItemManagement: React.FC = () => {
           ) : (
             <CategoryTabs
               categories={categories}
-              items={items.map(item => ({
+              items={visibleItems.map(item => ({
                 ...item,
                 category: item.category ?? undefined,
               })) as any}
