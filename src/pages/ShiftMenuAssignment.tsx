@@ -1,38 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
-// import type { ConnectDragSource, ConnectDropTarget } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TouchBackend } from 'react-dnd-touch-backend';
-import { Plus, 
-  Coffee, 
-  Sandwich, 
-  Apple, 
-  Pizza, 
-  Trash2, 
-  FilePenLine,
-  Beef,
-  Hamburger,
-  IceCreamBowl,
-  Salad,
-  Soup,
-  Utensils,
-  BottleWine,
-  Banana,
-  Cookie,
-  Croissant,
-  Dessert,
-  Drumstick,
-  EggFried,
-  Ham,
-  IceCreamCone,
-  CupSoda,
-  CakeSlice,
-  Beer,
-  Torus,
-  Donut,
-  Egg,
-  GlassWater,
-  Milk,
+import {
+  Plus, Coffee, Sandwich, Apple, Pizza, Trash2, FilePenLine, Beef, Hamburger,
+  IceCreamBowl, Salad, Soup, Utensils, BottleWine, Banana, Cookie, Croissant,
+  Dessert, Drumstick, EggFried, Ham, IceCreamCone, CupSoda, CakeSlice, Beer,
+  Torus, Donut, Egg, GlassWater, Milk,
 } from 'lucide-react';
 
 const ItemTypes = {
@@ -44,14 +18,15 @@ const iconMap: { [key: string]: React.ElementType } = {
   default: Utensils,
 };
 
-const IconComponent: React.FC<{ iconName: string | null }> = ({ iconName }) => {
+// Componente de ícono actualizado para aceptar tamaño y clases personalizadas
+const IconComponent: React.FC<{ iconName: string | null; size?: number; className?: string }> = ({ iconName, size = 18, className = "me-2" }) => {
   const Icon = iconName ? (iconMap[iconName] || iconMap.default) : iconMap.default;
-  return <Icon size={18} className="me-2" />;
+  return <Icon size={size} className={className} />;
 };
 
 interface MenuItem {
   id: number;
-  name:string;
+  name: string;
   category: { id: number; name: string } | null;
   iconName: string | null;
   isActive: boolean;
@@ -69,40 +44,55 @@ interface DraggableMenuItemProps {
   item: MenuItem;
 }
 
+// --- DraggableMenuItem MODIFICADO PARA SER UNA TARJETA EN LA GRILLA ---
 const DraggableMenuItem: React.FC<DraggableMenuItemProps> = ({ item }) => {
-  // --- LÓGICA DE VALIDACIÓN ---
-  // La capacidad de arrastrar se determina aquí, cumpliendo el requerimiento:
-  // 1. Si el ítem NO es 'COMPUESTO', siempre se puede arrastrar.
-  // 2. Si el ítem ES 'COMPUESTO', solo se puede arrastrar si `isProduced` es explícitamente `true`.
   const canDrag = item.type !== 'COMPUESTO' || item.isProduced === true;
   const isDisabled = !canDrag;
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.MENU_ITEM,
     item: { ...item },
-    canDrag: canDrag, // Esta propiedad de react-dnd habilita o deshabilita el arrastre.
+    canDrag: canDrag,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
   }));
 
-  // Estilos para dar feedback visual al usuario si el ítem está deshabilitado.
   const style: React.CSSProperties = {
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.4 : 1,
     cursor: isDisabled ? 'not-allowed' : 'move',
-    backgroundColor: isDisabled ? '#f8f9fa' : '',
-    color: isDisabled ? '#6c757d' : '',
+    minHeight: '90px',
   };
 
+  const cardClasses = `card h-100 d-flex flex-column justify-content-center align-items-center shadow-sm ${isDisabled ? 'bg-light text-muted' : 'bg-white'}`;
+
   return (
-    <div ref={drag as unknown as React.Ref<HTMLDivElement>} className="list-group-item list-group-item-action" style={style}>
-      <IconComponent iconName={item.iconName} />
-      {item.name}
-      {/* Etiqueta visual para ítems no produciddos */}
-      {isDisabled && <span className="badge bg-secondary ms-2">No Producido</span>}
+    <div className="col-6 col-sm-4 col-md-3 mb-3">
+      <div
+        ref={drag as unknown as React.Ref<HTMLDivElement>}
+        className={cardClasses}
+        style={style}
+        title={item.name}
+      >
+        <div className="card-body p-2 text-center">
+          <IconComponent iconName={item.iconName} size={32} className="d-block mx-auto mb-2" />
+          <p className="card-text small text-truncate mb-0" style={{ fontSize: '0.8rem' }}>
+            {item.name}
+          </p>
+          {isDisabled && (
+            <span
+              className="badge bg-dark position-absolute top-0 start-100 translate-middle p-1"
+              title="No Producido"
+            >
+              NP
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
+
 
 interface ShiftDashboardProps {
   shifts: Shift[];
@@ -114,6 +104,7 @@ interface ShiftDashboardProps {
   handleRemove: (itemId: number) => void;
 }
 
+// --- ShiftDashboard MODIFICADO PARA USAR LA GRILLA ---
 const ShiftDashboard: React.FC<ShiftDashboardProps> = ({
   shifts,
   activeShiftId,
@@ -143,13 +134,14 @@ const ShiftDashboard: React.FC<ShiftDashboardProps> = ({
       </ul>
 
       <div className="row">
-        <div className="col-md-6">
+        <div className="col-md-7">
           <h5>Ítems Disponibles</h5>
           {Object.keys(groupedMenuItems).length > 0 ? (
             Object.entries(groupedMenuItems).map(([category, items]) => (
               <div key={category} className="mb-3">
                 <h6>{category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h6>
-                <div className="list-group">
+                {/* Contenedor de la grilla */}
+                <div className="row g-2">
                   {items.map(item => (
                     <DraggableMenuItem key={item.id} item={item} />
                   ))}
@@ -157,16 +149,16 @@ const ShiftDashboard: React.FC<ShiftDashboardProps> = ({
               </div>
             ))
           ) : (
-            <div className="text-center text-muted p-5 card bg-light">
-              No hay más ítems para asignar a este turno.
+            <div className="text-center text-muted p-5 card bg-light" style={{ minHeight: '200px' }}>
+              <p>No hay más ítems para asignar a este turno.</p>
             </div>
           )}
         </div>
 
-        <div className="col-md-6">
-          <div ref={drop as unknown as React.Ref<HTMLDivElement>} className="card bg-light" style={{ minHeight: '400px' }}>
+        <div className="col-md-5">
+          <div ref={drop as unknown as React.Ref<HTMLDivElement>} className="card bg-light sticky-top" style={{ top: '20px', minHeight: '400px' }}>
             <div className="card-header">
-              Menú del Turno: {shifts.find(s => s.id === activeShiftId)?.name}
+              Menú del Turno: <strong>{shifts.find(s => s.id === activeShiftId)?.name}</strong>
             </div>
             <div className="card-body">
               {activeShiftId && assignedItems[activeShiftId]?.length > 0 ? (
@@ -177,15 +169,15 @@ const ShiftDashboard: React.FC<ShiftDashboardProps> = ({
                         <IconComponent iconName={item.iconName} />
                         {item.name}
                       </span>
-                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleRemove(item.id)}>
-                        &times;
+                      <button className="btn btn-sm btn-outline-danger border-0" onClick={() => handleRemove(item.id)}>
+                        <Trash2 size={16} />
                       </button>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <div className="text-center text-muted p-5">
-                  Arrastra ítems aquí para asignarlos a este turno.
+                <div className="d-flex align-items-center justify-content-center text-center text-muted p-5" style={{ minHeight: '300px' }}>
+                  <span>Arrastra ítems aquí para asignarlos a este turno.</span>
                 </div>
               )}
             </div>
@@ -195,6 +187,7 @@ const ShiftDashboard: React.FC<ShiftDashboardProps> = ({
     </>
   );
 };
+
 
 const ShiftMenuAssignment: React.FC = () => {
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -249,15 +242,9 @@ const ShiftMenuAssignment: React.FC = () => {
     loadData();
   }, [fetchShifts]);
 
-  // --- HOOK MODIFICADO ---
   useEffect(() => {
     if (activeShiftId) {
-      // 1. Limpiar inmediatamente los ítems del menú anterior.
-      // Esto previene el parpadeo de estado (deshabilitado -> habilitado) al
-      // evitar que se rendericen datos obsoletos del turno anterior.
       setMenuItems([]);
-
-      // 2. Cargar los nuevos ítems para el turno recién seleccionado.
       fetchMenuItems(activeShiftId).catch(err => {
         setError(err instanceof Error ? err.message : 'Error al cargar ítems del menú');
       });
@@ -328,15 +315,17 @@ const ShiftMenuAssignment: React.FC = () => {
 
   return (
     <DndProvider backend={Backend}>
-      <ShiftDashboard
-        shifts={shifts}
-        activeShiftId={activeShiftId}
-        setActiveShiftId={setActiveShiftId}
-        groupedMenuItems={groupedMenuItems}
-        assignedItems={assignedItems}
-        handleDrop={handleDrop}
-        handleRemove={handleRemove}
-      />
+      <div className="container-fluid mt-3">
+        <ShiftDashboard
+          shifts={shifts}
+          activeShiftId={activeShiftId}
+          setActiveShiftId={setActiveShiftId}
+          groupedMenuItems={groupedMenuItems}
+          assignedItems={assignedItems}
+          handleDrop={handleDrop}
+          handleRemove={handleRemove}
+        />
+      </div>
     </DndProvider>
   );
 };
