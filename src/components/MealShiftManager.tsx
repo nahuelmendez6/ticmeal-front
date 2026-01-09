@@ -40,7 +40,7 @@ const MealShiftManager: React.FC = () => {
           menuItemsService.getAll()
         ]);
         setShifts(shiftsData);
-        setMenuItems(itemsData);
+        setMenuItems(itemsData.filter((item: any) => item.isActive));
       } catch (err) {
         console.error('Error cargando datos para el formulario:', err);
       }

@@ -55,6 +55,8 @@ interface MenuItem {
   category: { id: number; name: string } | null;
   iconName: string | null;
   isActive: boolean;
+  type: 'SIMPLE' | 'COMPUESTO';
+  isProduced: boolean | null;
 }
 
 interface Shift {
@@ -68,18 +70,36 @@ interface DraggableMenuItemProps {
 }
 
 const DraggableMenuItem: React.FC<DraggableMenuItemProps> = ({ item }) => {
+  // --- LÓGICA DE VALIDACIÓN ---
+  // La capacidad de arrastrar se determina aquí, cumpliendo el requerimiento:
+  // 1. Si el ítem NO es 'COMPUESTO', siempre se puede arrastrar.
+  // 2. Si el ítem ES 'COMPUESTO', solo se puede arrastrar si `isProduced` es explícitamente `true`.
+  const canDrag = item.type !== 'COMPUESTO' || item.isProduced === true;
+  const isDisabled = !canDrag;
+
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.MENU_ITEM,
     item: { ...item },
+    canDrag: canDrag, // Esta propiedad de react-dnd habilita o deshabilita el arrastre.
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
   }));
 
+  // Estilos para dar feedback visual al usuario si el ítem está deshabilitado.
+  const style: React.CSSProperties = {
+    opacity: isDragging ? 0.5 : 1,
+    cursor: isDisabled ? 'not-allowed' : 'move',
+    backgroundColor: isDisabled ? '#f8f9fa' : '',
+    color: isDisabled ? '#6c757d' : '',
+  };
+
   return (
-    <div ref={drag as unknown as React.Ref<HTMLDivElement>} className="list-group-item list-group-item-action" style={{ opacity: isDragging ? 0.5 : 1, cursor: 'move' }}>
+    <div ref={drag as unknown as React.Ref<HTMLDivElement>} className="list-group-item list-group-item-action" style={style}>
       <IconComponent iconName={item.iconName} />
       {item.name}
+      {/* Etiqueta visual para ítems no produciddos */}
+      {isDisabled && <span className="badge bg-secondary ms-2">No Producido</span>}
     </div>
   );
 };
@@ -195,18 +215,19 @@ const ShiftMenuAssignment: React.FC = () => {
     const data: Shift[] = await response.json();
     setShifts(data);
     const initialAssignedItems = data.reduce((acc, shift) => {
-      acc[shift.id] = shift.menuItems || [];
+      acc[shift.id] = (shift.menuItems || []).filter(item => item.isActive);
       return acc;
     }, {} as { [key: number]: MenuItem[] });
     setAssignedItems(initialAssignedItems);
     if (data.length > 0) {
-      setActiveShiftId(data[0].id);
+      setActiveShiftId(prevId => prevId ?? data[0].id);
     }
   }, [baseUrl]);
 
-  const fetchMenuItems = useCallback(async () => {
+  const fetchMenuItems = useCallback(async (shiftId: number) => {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${baseUrl}/menu-items`, {
+    const today = new Date().toISOString().split('T')[0];
+    const response = await fetch(`${baseUrl}/menu-items?shiftId=${shiftId}&date=${today}`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
     if (!response.ok) throw new Error('Error al cargar los ítems del menú');
@@ -218,15 +239,30 @@ const ShiftMenuAssignment: React.FC = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        await Promise.all([fetchShifts(), fetchMenuItems()]);
-        setLoading(false);
+        await fetchShifts();
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error desconocido');
+      } finally {
         setLoading(false);
       }
     };
     loadData();
-  }, [fetchShifts, fetchMenuItems]);
+  }, [fetchShifts]);
+
+  // --- HOOK MODIFICADO ---
+  useEffect(() => {
+    if (activeShiftId) {
+      // 1. Limpiar inmediatamente los ítems del menú anterior.
+      // Esto previene el parpadeo de estado (deshabilitado -> habilitado) al
+      // evitar que se rendericen datos obsoletos del turno anterior.
+      setMenuItems([]);
+
+      // 2. Cargar los nuevos ítems para el turno recién seleccionado.
+      fetchMenuItems(activeShiftId).catch(err => {
+        setError(err instanceof Error ? err.message : 'Error al cargar ítems del menú');
+      });
+    }
+  }, [activeShiftId, fetchMenuItems]);
 
   const updateShiftMenuItems = useCallback(async (shiftId: number, items: MenuItem[]) => {
     const token = localStorage.getItem('token');

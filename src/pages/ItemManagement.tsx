@@ -11,6 +11,7 @@ import { ingredientsService } from '../services/ingredient.service';
 import type { Category } from '../types/menu';
 import type { Ingredient } from '../types/ingtredient';
 import type { RecipeInput, RecipeIngredient } from '../types/recipe';
+import { Plus } from 'lucide-react';
 
 // type MenuItem = ReturnType<typeof useMenuItems>['items'][number];
 
@@ -36,6 +37,7 @@ const ItemManagement: React.FC<ItemManagementProps> = ({ itemType }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [newItem, setNewItem] = useState({
     name: '',
@@ -135,6 +137,22 @@ const ItemManagement: React.FC<ItemManagementProps> = ({ itemType }) => {
     }
   };
 
+  const handleCreateClick = () => {
+    setEditingItem(null);
+    setNewItem({
+      name: '',
+      stock: 0,
+      minStock: 0,
+      maxOrder: 0,
+      categoryId: categories.length > 0 ? String(categories[0].id) : '',
+      cost: 0,
+      iconName: 'Coffee',
+      type: itemType || 'SIMPLE',
+    });
+    setRecipeInputs([]);
+    setIsModalOpen(true);
+  };
+
   const handleEditClick = (item: MenuItem) => {
     setEditingItem(item);
     setNewItem({
@@ -155,7 +173,7 @@ const ItemManagement: React.FC<ItemManagementProps> = ({ itemType }) => {
 
     setRecipeInputs(existingRecipeInputs);
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setIsModalOpen(true);
   };
 
   const handleCancelEdit = () => {
@@ -171,6 +189,7 @@ const ItemManagement: React.FC<ItemManagementProps> = ({ itemType }) => {
       type: itemType || 'SIMPLE',
     });
     setRecipeInputs([]);
+    setIsModalOpen(false);
   };
 
   const handleDeleteClick = (itemId: number) => {
@@ -205,24 +224,12 @@ const ItemManagement: React.FC<ItemManagementProps> = ({ itemType }) => {
     <div className="card">
       <div className="card-body">
         {error && <div className="alert alert-danger" role="alert">{error}</div>}
-        {/* --- Form Section --- */}
-        <ItemForm
-          editingItem={editingItem as any}
-          categories={categories}
-          onSubmit={handleSubmit}
-          newItemState={newItem}
-          setNewItemState={setNewItem}
-          recipeIngredients={recipeInputs}
-        />
 
-        {/* --- Recipe Section (Only for Compound Products) --- */}
-        {itemType === 'COMPUESTO' && (
-          <RecipeEditor
-            editingItem={editingItem as any}
-            ingredients={systemIngredients}
-            recipeState={[recipeInputs, setRecipeInputs]}
-          />
-        )}
+        <div className="d-flex justify-content-end mb-3">
+          <button className="btn btn-primary" onClick={handleCreateClick}>
+            <Plus size={18} className="me-2" /> {itemType === 'COMPUESTO' ? 'Nuevo Producto Compuesto' : 'Nuevo Producto Simple'}
+          </button>
+        </div>
 
         {/* --- List Section --- */}
         <div>
@@ -250,6 +257,41 @@ const ItemManagement: React.FC<ItemManagementProps> = ({ itemType }) => {
           />
         </div>
       </div>
+
+      {/* Modal de Creación/Edición */}
+      {isModalOpen && (
+        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">{editingItem ? 'Editar Item' : 'Crear Item'}</h5>
+                <button type="button" className="btn-close" onClick={handleCancelEdit}></button>
+              </div>
+              <div className="modal-body">
+                <ItemForm
+                  editingItem={editingItem as any}
+                  categories={categories}
+                  onSubmit={handleSubmit}
+                  newItemState={newItem}
+                  setNewItemState={setNewItem}
+                  recipeIngredients={recipeInputs}
+                  onCancel={handleCancelEdit}
+                />
+                {itemType === 'COMPUESTO' && (
+                  <div className="mt-4">
+                    <h5 className="mb-3">Receta</h5>
+                    <RecipeEditor
+                      editingItem={editingItem as any}
+                      ingredients={systemIngredients}
+                      recipeState={[recipeInputs, setRecipeInputs]}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       <DeleteModal
