@@ -9,6 +9,13 @@ import {
   Torus, Donut, Egg, GlassWater, Milk,
 } from 'lucide-react';
 
+const getLocalDate = () => {
+  const today = new Date();
+  const offset = today.getTimezoneOffset();
+  const localDate = new Date(today.getTime() - (offset * 60 * 1000));
+  return localDate.toISOString().split('T')[0];
+};
+
 const ItemTypes = {
   MENU_ITEM: 'menu_item',
 };
@@ -219,7 +226,7 @@ const ShiftMenuAssignment: React.FC = () => {
 
   const fetchMenuItems = useCallback(async (shiftId: number) => {
     const token = localStorage.getItem('token');
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDate();
     const response = await fetch(`${baseUrl}/menu-items?shiftId=${shiftId}&date=${today}`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
@@ -251,7 +258,7 @@ const ShiftMenuAssignment: React.FC = () => {
     }
   }, [activeShiftId, fetchMenuItems]);
 
-  const updateShiftMenuItems = useCallback(async (shiftId: number, items: MenuItem[]) => {
+  const updateShiftMenuItems = useCallback(async (shiftId: number, items: MenuItem[], date: string) => {
     const token = localStorage.getItem('token');
     const menuItemIds = items.map(i => i.id);
     try {
@@ -261,35 +268,39 @@ const ShiftMenuAssignment: React.FC = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ menuItemIds }),
+        body: JSON.stringify({ menuItemIds, date }),
       });
       if (!response.ok) {
-        throw new Error('Error al actualizar el menú del turno');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar el menú del turno');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido al guardar');
+      await fetchShifts();
     }
-  }, [baseUrl]);
+  }, [baseUrl, fetchShifts]);
 
   const handleDrop = useCallback(async (item: MenuItem) => {
     if (activeShiftId) {
+      const date = getLocalDate();
       const newAssigned = [...(assignedItems[activeShiftId] || []), item];
       setAssignedItems(prev => ({
         ...prev,
         [activeShiftId]: newAssigned,
       }));
-      await updateShiftMenuItems(activeShiftId, newAssigned);
+      await updateShiftMenuItems(activeShiftId, newAssigned, date);
     }
   }, [activeShiftId, assignedItems, updateShiftMenuItems]);
 
   const handleRemove = async (itemId: number): Promise<void> => {
     if (activeShiftId) {
+      const date = getLocalDate();
       const newAssigned = (assignedItems[activeShiftId] || []).filter(item => item.id !== itemId);
       setAssignedItems(prev => ({
         ...prev,
         [activeShiftId]: newAssigned,
       }));
-      await updateShiftMenuItems(activeShiftId, newAssigned);
+      await updateShiftMenuItems(activeShiftId, newAssigned, date);
     }
   };
 

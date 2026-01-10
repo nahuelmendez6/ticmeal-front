@@ -7,6 +7,13 @@ import { fetchShifts } from '../services/shift.services';
 import { menuItemsService } from '../services/menu.items.service';
 import api from '../services/api';
 
+const getLocalDate = () => {
+  const today = new Date();
+  const offset = today.getTimezoneOffset();
+  const localDate = new Date(today.getTime() - (offset * 60 * 1000));
+  return localDate.toISOString().split('T')[0];
+};
+
 const MealShiftManager: React.FC = () => {
   const { mealShifts, loading, error, addMealShift, refetch } = useMealShifts();
   const [shifts, setShifts] = useState<any[]>([]);
@@ -14,14 +21,14 @@ const MealShiftManager: React.FC = () => {
   
   // Estado inicial del formulario
   const initialState: CreateMealShiftDto = {
-    date: new Date().toISOString().split('T')[0], // Fecha de hoy YYYY-MM-DD
+    date: getLocalDate(), // Fecha de hoy YYYY-MM-DD
     shiftId: 0,
     menuItemId: 0,
     quantityProduced: 0,
   };
 
   const [formData, setFormData] = useState<CreateMealShiftDto>(initialState);
-  const [filterDate, setFilterDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [filterDate, setFilterDate] = useState<string>(getLocalDate());
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
